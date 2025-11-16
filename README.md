@@ -76,7 +76,7 @@ This skill documents the latest Logseq plugin API features added in recent commi
 1. **Clone or download this repository:**
    ```bash
    cd ~/Documents/Code
-   git clone https://github.com/yourusername/logseq-db-plugin-api-skill.git
+   git clone https://github.com/kerim/logseq-db-plugin-api-skill.git
    ```
 
 2. **Install to Claude Code skills directory:**
