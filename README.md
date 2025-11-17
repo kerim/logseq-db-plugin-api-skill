@@ -174,7 +174,7 @@ logseq.ready(setupPlugin).catch(console.error)
 
 ## Version Requirements
 
-- **Logseq**: 0.12.0+ (for full DB graph support)
+- **Logseq**: 0.11.0+ (for full DB graph support)
 - **@logseq/libs**: 0.2.8+ (for latest tag management APIs)
 - **Node.js**: 18+ recommended
 - **Claude Code**: Latest version
@@ -257,8 +257,10 @@ await logseq.API['tag-add-property']('zotero', 'year')
 - `logseq.Editor.removeTag(blockUuid, tagName)`
 - `logseq.Editor.getTag(nameOrUuidOrIdent)`
 - `logseq.Editor.getTagObjects(nameOrIdent)`
-- `logseq.API['tag-add-property'](tagName, propName)`
-- `logseq.API['tag-remove-property'](tagName, propName)`
+- `logseq.API['tag-add-property'](tagName, propName)` - name-based only
+- `logseq.API['tag-remove-property'](tagName, propName)` - name-based only
+- `logseq.Editor.addTagProperty(tagId, propertyIdOrName)` - accepts UUIDs or names
+- `logseq.Editor.removeTagProperty(tagId, propertyIdOrName)` - accepts UUIDs or names
 
 ### Property Management
 - `logseq.Editor.upsertBlockProperty(uuid, key, value)`

@@ -301,6 +301,10 @@ interface PageEntity {
 
 Add properties to tags to create class schemas (added in commit 7f4d8ad22).
 
+**Two API Styles Available**:
+
+#### Option 1: Kebab-case API (name-based only)
+
 ```typescript
 // Add property to a tag (defines it for all tagged nodes)
 await logseq.API['tag-add-property']('zot', 'author')
@@ -311,10 +315,30 @@ await logseq.API['tag-add-property']('zot', 'DOI')
 await logseq.API['tag-remove-property']('zot', 'unwanted-property')
 ```
 
+#### Option 2: CamelCase API (accepts UUIDs or names)
+
+```typescript
+// Add property to tag using UUID or name
+await logseq.Editor.addTagProperty('zot', 'author')
+await logseq.Editor.addTagProperty(tagUuid, propertyUuid)
+await logseq.Editor.addTagProperty(tagUuid, 'author')
+
+// Remove property from tag using UUID or name
+await logseq.Editor.removeTagProperty('zot', 'unwanted-property')
+await logseq.Editor.removeTagProperty(tagUuid, propertyUuid)
+```
+
+**When to use UUIDs**:
+- Working with dynamically created properties
+- Need to reference specific property entities
+- Building generic class management tools
+- Programmatically managing tag schemas
+
 **Important Notes**:
 - Cannot add/remove private built-in properties
 - Tag must be a class (created via createTag or manually)
 - Property must be a valid property entity
+- Both API styles work identically, choose based on your use case
 
 **Complete Tag Setup Pattern**:
 
@@ -1108,7 +1132,7 @@ properties: {
 **Logseq**:
 - DB graph support: Logseq 0.10.0+
 - Full DB API: Logseq 0.11.0+
-- Latest features (custom UUID, tag management): Logseq 0.12.0+
+- Latest features (custom UUID, tag management): Logseq 0.11.0+
 
 **@logseq/libs**:
 - Basic DB support: `^0.0.17`
@@ -1123,7 +1147,7 @@ properties: {
     "@logseq/libs": "^0.2.8"
   },
   "engines": {
-    "logseq": ">=0.12.0"
+    "logseq": ">=0.11.0"
   }
 }
 ```
@@ -1154,7 +1178,7 @@ console.log(`Logseq version: ${logseqVersion}`)
 const hasCreateTag = typeof logseq.Editor.createTag === 'function'
 if (!hasCreateTag) {
   logseq.UI.showMsg(
-    '❌ This plugin requires Logseq 0.12.0+ with @logseq/libs 0.2.4+',
+    '❌ This plugin requires Logseq 0.11.0+ with @logseq/libs 0.2.4+',
     'error'
   )
 }
@@ -1223,9 +1247,13 @@ logseq.Editor.getTagObjects(nameOrIdent)
 logseq.Editor.addTag(blockUuid, tagName)
 logseq.Editor.removeTag(blockUuid, tagName)
 
-// Define tag properties
+// Define tag properties (name-based)
 logseq.API['tag-add-property'](tagName, propName)
 logseq.API['tag-remove-property'](tagName, propName)
+
+// Define tag properties (UUID or name-based)
+logseq.Editor.addTagProperty(tagId, propertyIdOrName)
+logseq.Editor.removeTagProperty(tagId, propertyIdOrName)
 ```
 
 ### Property Management
