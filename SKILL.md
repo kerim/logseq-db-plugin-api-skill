@@ -1,5 +1,6 @@
 ---
 name: logseq-db-plugin-api
+version: 1.1.0
 description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling, and EDN import capabilities.
 ---
 
@@ -66,12 +67,11 @@ await logseq.Editor.upsertBlockProperty(blockUuid, 'author', 'Jane Doe')
 // Properties set during creation with type validation
 await logseq.Editor.createPage('My Page', {
   tags: ['zot'],
-  properties: {
-    author: 'Jane Doe',      // text property
-    year: 2023,              // number property
-    published: '2023-05-15'  // date property
-  }
+  author: 'Jane Doe',      // text property
+  year: 2023,              // number property (see limitations below)
+  published: '2023-05-15'  // date property
 })
+// Note: Properties go at top level, NOT wrapped in properties:{}
 ```
 
 ### Tag System
@@ -110,25 +110,17 @@ await logseq.Editor.createPage('My Page', {
 Create pages with tags, properties, and custom UUIDs in a single operation.
 
 ```typescript
-interface PageCreateOptions {
-  tags?: string[]                    // Tag names (without #)
-  properties?: Record<string, any>   // Property key-value pairs
-  customUUID?: string                // Optional custom UUID
-  class?: boolean                    // Create as class page
-  schema?: Record<string, any>       // Class schema definition
-}
+// CRITICAL: Properties go at TOP LEVEL, not wrapped in properties:{}
 
 // Basic page creation with properties
 const page = await logseq.Editor.createPage(
   'Research Paper Title',
   {
     tags: ['zot'],
-    properties: {
-      author: 'Jane Doe',
-      year: 2023,
-      DOI: 'https://doi.org/10.1234/example',
-      collections: ['Reading List', 'Dissertation']  // multi-value
-    }
+    author: 'Jane Doe',
+    year: '2023',  // Use string to avoid NUMBER property issues
+    DOI: 'https://doi.org/10.1234/example',
+    collections: ['Reading List', 'Dissertation']  // multi-value
   }
 )
 
@@ -137,9 +129,18 @@ const page = await logseq.Editor.createPage(
   'My Page',
   {
     customUUID: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-    properties: { source: 'external-system' }
+    source: 'external-system'
   }
 )
+
+// ❌ WRONG - Do NOT wrap in properties:{}
+const page = await logseq.Editor.createPage('My Page', {
+  tags: ['zot'],
+  properties: {  // DON'T DO THIS!
+    author: 'Jane Doe'
+  }
+})
+// This creates a single property called "properties" with JSON value
 ```
 
 **Property Type Handling**:
@@ -301,7 +302,7 @@ interface PageEntity {
 
 Add properties to tags to create class schemas (added in commit 7f4d8ad22).
 
-**Two API Styles Available**:
+**IMPORTANT**: The documented APIs below may not be fully exposed in the plugin context. See **Parent Frame API** below for the confirmed working method.
 
 #### Option 1: Kebab-case API (name-based only)
 
@@ -314,6 +315,8 @@ await logseq.API['tag-add-property']('zot', 'DOI')
 // Remove property from tag
 await logseq.API['tag-remove-property']('zot', 'unwanted-property')
 ```
+
+**Note**: `logseq.API` may be undefined in plugin context. See Parent Frame API below.
 
 #### Option 2: CamelCase API (accepts UUIDs or names)
 
@@ -328,19 +331,139 @@ await logseq.Editor.removeTagProperty('zot', 'unwanted-property')
 await logseq.Editor.removeTagProperty(tagUuid, propertyUuid)
 ```
 
+**Note**: `logseq.Editor.addTagProperty` may not be available in all SDK versions.
+
+#### **Parent Frame API** (Confirmed Working)
+
+Plugins run in an iframe, and the tag property API is available in the parent frame context:
+
+```typescript
+// Access parent frame API
+// @ts-ignore
+const parentLogseq = (window as any).parent?.logseq
+
+if (!parentLogseq?.api?.add_tag_property) {
+  throw new Error('parent.logseq.api.add_tag_property not available')
+}
+
+// Add property to tag (snake_case method names)
+await parentLogseq.api.add_tag_property(tagUuid, 'author')
+await parentLogseq.api.add_tag_property(tagUuid, 'title')
+await parentLogseq.api.add_tag_property(tagUuid, 'publisher')
+
+// Remove property from tag
+await parentLogseq.api.remove_tag_property(tagUuid, 'unwanted-property')
+```
+
+**Parent Frame API Signature**:
+- **Method**: `parent.logseq.api.add_tag_property(tagUuid, propertyName)`
+- **Parameters**:
+  - `tagUuid` (string) - UUID of the tag to add property to
+  - `propertyName` (string) - Name of the property (NOT UUID)
+- **Naming**: Snake_case (`add_tag_property`, not `addTagProperty`)
+- **Context**: Must be called from `parent.logseq.api`, not `logseq.API` or `logseq.Editor`
+
+**Why Parent Frame?**
+- Plugins run in an iframe sandbox
+- `window.logseq.api` is undefined in plugin context
+- `parent.logseq.api` accesses the parent frame's Logseq API
+- Some APIs (like tag property management) are only exposed in parent frame
+
+**Property Namespacing**:
+
+Plugin-created properties are automatically namespaced in the database:
+- Format: `:plugin.property.{plugin-id}/{property-name}`
+- Example: `:plugin.property.my-plugin/title`
+- This prevents conflicts between plugins
+- Built-in properties use `:logseq.property/{property-name}`
+
+**Entity Reference Behavior**:
+
+When you read pages with `getPage()`, properties are stored as **entity references** (database IDs), not direct values:
+
+```typescript
+const page = await logseq.Editor.getPage(pageUuid)
+
+// Properties appear as entity IDs:
+console.log(page[':plugin.property.my-plugin/title'])  // → 189
+console.log(page[':plugin.property.my-plugin/author'])  // → 190
+```
+
+The numbers (189, 190) are entity IDs. The actual values are stored in those entity records in the database.
+
+**Reading Actual Property Values**:
+
+To get dereferenced property values, use Datalog queries instead of `getPage()`:
+
+```typescript
+// Query to get actual property values
+const query = `
+{:query [:find (pull ?b [:block/uuid
+                         :plugin.property.my-plugin/title
+                         :plugin.property.my-plugin/author])
+         :where
+         [?b :block/uuid "${pageUuid}"]]}`
+
+const results = await logseq.DB.datascriptQuery(query)
+const page = results[0]?.[0]
+
+console.log(page[':plugin.property.my-plugin/title'])  // → "Actual Title"
+console.log(page[':plugin.property.my-plugin/author'])  // → "John Doe"
+```
+
+**Key Points**:
+- `getPage()` returns entity references
+- Datalog queries with proper pull patterns dereference entities
+- Use namespaced keys (`:plugin.property.{id}/{name}`) in queries
+
 **When to use UUIDs**:
 - Working with dynamically created properties
 - Need to reference specific property entities
 - Building generic class management tools
 - Programmatically managing tag schemas
 
+**Critical Requirement: Property Initialization**
+
+Properties **MUST exist in the database** before adding them to a tag schema.
+
+**Error when property doesn't exist**:
+```
+"Not a valid property"
+```
+
+**Solution**: Create properties first by using them on a temporary page:
+
+```typescript
+// Step 1: Create temp page with properties to initialize them
+const tempPage = await logseq.Editor.createPage(
+  `temp-property-init-${Date.now()}`,
+  {
+    title: 'temp',
+    author: 'temp',
+    publisher: 'temp'
+  },
+  { redirect: false }
+)
+
+// Step 2: Delete temp page (properties persist in database)
+await logseq.Editor.deletePage(tempPage.name)
+
+// Step 3: NOW properties can be added to tag schema
+const parentLogseq = (window as any).parent?.logseq
+await parentLogseq.api.add_tag_property(tagUuid, 'title')
+await parentLogseq.api.add_tag_property(tagUuid, 'author')
+await parentLogseq.api.add_tag_property(tagUuid, 'publisher')
+```
+
+**Why this works**: Properties are created when first used on a page. Deleting the page doesn't delete the property definition from the database.
+
 **Important Notes**:
 - Cannot add/remove private built-in properties
 - Tag must be a class (created via createTag or manually)
-- Property must be a valid property entity
+- Property must exist in database (create via temp page first)
 - Both API styles work identically, choose based on your use case
 
-**Complete Tag Setup Pattern**:
+**Complete Tag Setup Pattern (Recommended)**:
 
 ```typescript
 async function setupZoteroTag() {
@@ -352,22 +475,50 @@ async function setupZoteroTag() {
     return
   }
 
-  // 2. Define properties on tag
+  // 2. Define properties list
   const properties = [
     'zoteroKey',      // unique identifier
     'citeKey',        // citation key
     'itemType',       // article, book, etc.
     'title',
     'author1', 'author2', 'author3', 'authorsEtAl',
-    'year',
+    'year',           // Note: NUMBER properties have limitations (see below)
     'DOI',
     'url',
     'collections',    // multi-value
     'tags'            // Zotero tags (multi-value)
   ]
 
+  // 3. Initialize properties with temp page
+  const propertyInit: Record<string, any> = {}
   for (const prop of properties) {
-    await logseq.API['tag-add-property']('zot', prop)
+    propertyInit[prop] = 'temp'  // Use TEXT for all to avoid NUMBER issues
+  }
+
+  const tempPage = await logseq.Editor.createPage(
+    `temp-init-${Date.now()}`,
+    propertyInit,
+    { redirect: false }
+  )
+
+  await logseq.Editor.deletePage(tempPage.name)
+  console.log('✅ Properties initialized')
+
+  // 4. Add properties to tag schema using parent frame API
+  const parentLogseq = (window as any).parent?.logseq
+
+  if (!parentLogseq?.api?.add_tag_property) {
+    console.error('❌ parent.logseq.api.add_tag_property not available')
+    return
+  }
+
+  for (const prop of properties) {
+    try {
+      await parentLogseq.api.add_tag_property(zotTag.uuid, prop)
+      console.log(`✅ Added property: ${prop}`)
+    } catch (err: any) {
+      console.error(`❌ Failed to add property ${prop}:`, err.message)
+    }
   }
 
   console.log('✅ #zot tag configured with properties')
@@ -384,22 +535,21 @@ async function setupZoteroTag() {
 
 ```typescript
 // All properties set in one operation
+// IMPORTANT: Properties go at top level, NOT in properties:{}
 await logseq.Editor.createPage('Paper Title', {
   tags: ['zot'],
-  properties: {
-    zoteroKey: 'ABC123',
-    itemType: 'journalArticle',
-    title: 'Research on Topic',
-    author1: 'Jane Doe',
-    author2: 'John Smith',
-    authorsEtAl: 'Additional authors...',
-    year: 2023,
-    DOI: 'https://doi.org/10.1234/example',
-    collections: ['Reading List', 'Methodology'],  // array
-    tags: ['qualitative', 'case-study'],           // array
-    url: 'https://example.com/paper',
-    abstract: 'Long text...'
-  }
+  zoteroKey: 'ABC123',
+  itemType: 'journalArticle',
+  title: 'Research on Topic',
+  author1: 'Jane Doe',
+  author2: 'John Smith',
+  authorsEtAl: 'Additional authors...',
+  year: '2023',  // Use string to avoid NUMBER issues
+  DOI: 'https://doi.org/10.1234/example',
+  collections: ['Reading List', 'Methodology'],  // array
+  tags: ['qualitative', 'case-study'],           // array (Zotero tags, not Logseq tags)
+  url: 'https://example.com/paper',
+  abstract: 'Long text...'
 })
 ```
 
@@ -465,12 +615,50 @@ await logseq.API['db-based-save-block-properties!'](
 | Type | Example Value | Behavior |
 |------|---------------|----------|
 | Text | `"Jane Doe"` | Default type, allows any text |
-| Number | `2023` | Actual number, not string |
+| Number | `2023` | Actual number, not string (see limitations below) |
 | Date | `"2023-05-15"` | Links to journal page |
 | DateTime | `"2023-05-15T14:30:00"` | Date + time |
 | URL | `"https://..."` | Clickable link |
 | Checkbox | `true` or `false` | Boolean |
 | Multi-value | `["a", "b", "c"]` | Array of values |
+
+**CRITICAL LIMITATION: NUMBER Properties**
+
+NUMBER properties currently have significant issues in Logseq DB when created via plugin API:
+
+**Problem**: Numbers are interpreted as entity ID references, not values.
+
+**Error Example**:
+```
+Error: Expected number or lookup ref for entity id, got 0
+```
+
+**Root Cause**: When you use `year: 0` or `year: 2025`, Logseq DB treats these as entity lookup IDs:
+- `0` → tries to find entity with ID 0 (doesn't exist)
+- `2025` → tries to find entity with ID 2025
+
+**Current Status** (as of 2025-11-17):
+- ❌ Cannot reliably create NUMBER properties via plugin API
+- ❌ No known workaround for NUMBER value vs. entity reference
+- ✅ TEXT properties work reliably
+- ❓ Unknown if NUMBER properties work when created through UI
+
+**Recommendation**:
+Use TEXT properties for all values until NUMBER property support is clarified:
+
+```typescript
+// Instead of this:
+properties: {
+  year: 2023,  // ❌ May fail with entity ID error
+}
+
+// Use this:
+properties: {
+  year: '2023',  // ✅ Works reliably
+}
+```
+
+**Reference**: See POC at `/Users/niyaro/Documents/Code/Logseq/logseq-tag-schema-poc` for detailed testing results
 
 ### Reserved Property Names
 
@@ -1123,6 +1311,39 @@ properties: {
 }
 ```
 
+### Pitfall 7: Property Value Dereferencing
+
+**Problem**: `getPage()` returns entity IDs instead of actual values.
+
+**Example**:
+```typescript
+const page = await logseq.Editor.getPage(pageUuid)
+console.log(page[':plugin.property.my-plugin/title'])  // → 189 (entity ID!)
+```
+
+**Cause**: Properties are stored as entity references in Logseq DB.
+
+**Solution**: Use Datalog queries with proper pull patterns to dereference.
+
+```typescript
+// ❌ WRONG - Using getPage()
+const page = await logseq.Editor.getPage(pageUuid)
+const title = page.properties?.title  // undefined or entity ID
+
+// ✅ CORRECT - Using Datalog query
+const query = `
+{:query [:find (pull ?b [:block/uuid
+                         :plugin.property.my-plugin/title])
+         :where
+         [?b :block/uuid "${pageUuid}"]]}`
+
+const results = await logseq.DB.datascriptQuery(query)
+const page = results[0]?.[0]
+const title = page[':plugin.property.my-plugin/title']  // "Actual Title"
+```
+
+**Reference**: See [logseq-tag-schema-poc](https://github.com/kerim/logseq-tag-schema-poc) for detailed examples.
+
 ---
 
 ## Version Compatibility
@@ -1135,7 +1356,8 @@ properties: {
 - Latest features (custom UUID, tag management): Logseq 0.11.0+
 
 **@logseq/libs**:
-- Basic DB support: `^0.0.17`
+- **Minimum for DB graphs**: `^0.3.0` (required for DB compatibility)
+- Basic DB support: `^0.0.17` (limited features)
 - Tag management APIs: `^0.2.4`
 - Full new APIs: `^0.2.8`
 
@@ -1198,6 +1420,15 @@ if (!hasCreateTag) {
 - @logseq/libs API reference: https://github.com/logseq/logseq/tree/master/libs/src
 
 ### Example Projects
+
+- **logseq-tag-schema-poc**: `/Users/niyaro/Documents/Code/Logseq/logseq-tag-schema-poc/`
+  - **Working demonstration of tag schema API**
+  - Confirms `parent.logseq.api.add_tag_property()` works
+  - Documents property initialization requirement
+  - Shows entity reference behavior
+  - Includes comprehensive future research questions
+  - GitHub: https://github.com/kerim/logseq-tag-schema-poc
+
 - **logseq-zot-db-plugin**: `/Users/niyaro/Documents/Code/Logseq-Zotero Integration/logseq-zot-db-plugin/`
   - Real-world example of Zotero integration
   - Uses tag schemas, property API, template auto-apply

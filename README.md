@@ -1,5 +1,8 @@
 # Logseq DB Plugin API Skill
 
+**Version**: 1.1.0
+**Updated**: 2025-11-17
+
 A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**.
 
 ## Overview
@@ -7,6 +10,22 @@ A comprehensive Claude Code skill for developing Logseq plugins specifically for
 This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling, EDN import capabilities, and best practices for DB-specific development.
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
+
+## What's New in v1.1.0
+
+### Confirmed Working APIs ✅
+- **Tag Schema Definition**: Documented working `parent.logseq.api.add_tag_property()` API
+- **Property Initialization**: Proven temp page pattern for creating properties before schema definition
+- **Entity References**: Complete explanation of how properties are stored as database entities
+- **Property Dereferencing**: Datalog query patterns for reading actual property values
+
+### New Documentation
+- **Working POC**: Reference to [logseq-tag-schema-poc](https://github.com/kerim/logseq-tag-schema-poc)
+- **Property Namespacing**: How plugin properties are auto-namespaced
+- **Common Pitfall #7**: Property value dereferencing issues and solutions
+- **SDK Requirements**: Updated minimum version to 0.3.0+ for DB graphs
+
+See [CHANGELOG.md](CHANGELOG.md) for complete details.
 
 ## What's Different in DB Graphs?
 
@@ -143,7 +162,7 @@ Here's a minimal plugin that creates a tag with properties:
 import '@logseq/libs'
 
 async function setupPlugin() {
-  // Create #mydata tag
+  // 1. Create #mydata tag
   const tag = await logseq.Editor.createTag('mydata')
 
   if (!tag) {
@@ -151,19 +170,41 @@ async function setupPlugin() {
     return
   }
 
-  // Define properties on the tag
-  await logseq.API['tag-add-property']('mydata', 'title')
-  await logseq.API['tag-add-property']('mydata', 'source')
-  await logseq.API['tag-add-property']('mydata', 'date')
+  // 2. Initialize properties (required before adding to schema)
+  const tempPage = await logseq.Editor.createPage(
+    `temp-init-${Date.now()}`,
+    {
+      title: 'temp',
+      source: 'temp',
+      date: 'temp'
+    },
+    { redirect: false }
+  )
 
-  // Create a page using the tag
+  await logseq.Editor.deletePage(tempPage.name)
+  console.log('✅ Properties initialized')
+
+  // 3. Add properties to tag schema (using parent frame API)
+  // @ts-ignore
+  const parentLogseq = (window as any).parent?.logseq
+
+  if (!parentLogseq?.api?.add_tag_property) {
+    console.error('parent.logseq.api.add_tag_property not available')
+    return
+  }
+
+  await parentLogseq.api.add_tag_property(tag.uuid, 'title')
+  await parentLogseq.api.add_tag_property(tag.uuid, 'source')
+  await parentLogseq.api.add_tag_property(tag.uuid, 'date')
+
+  console.log('✅ Tag schema defined')
+
+  // 4. Create a page using the tag (properties at top level!)
   await logseq.Editor.createPage('Example Item', {
     tags: ['mydata'],
-    properties: {
-      title: 'My First Item',
-      source: 'External API',
-      date: '2024-01-15'
-    }
+    title: 'My First Item',
+    source: 'External API',
+    date: '2024-01-15'
   })
 
   console.log('✅ Plugin setup complete!')
@@ -172,10 +213,17 @@ async function setupPlugin() {
 logseq.ready(setupPlugin).catch(console.error)
 ```
 
+**Key Points**:
+- Properties must exist before adding to schema (step 2)
+- Use `parent.logseq.api.add_tag_property()` from parent frame
+- Properties go at top level in `createPage()`, NOT wrapped in `properties:{}`
+
 ## Version Requirements
 
 - **Logseq**: 0.11.0+ (for full DB graph support)
-- **@logseq/libs**: 0.2.8+ (for latest tag management APIs)
+- **@logseq/libs**: **0.3.0+** (minimum for DB graph compatibility)
+  - 0.2.4+ for tag management APIs
+  - 0.2.8+ for full feature set
 - **Node.js**: 18+ recommended
 - **Claude Code**: Latest version
 
@@ -257,10 +305,10 @@ await logseq.API['tag-add-property']('zotero', 'year')
 - `logseq.Editor.removeTag(blockUuid, tagName)`
 - `logseq.Editor.getTag(nameOrUuidOrIdent)`
 - `logseq.Editor.getTagObjects(nameOrIdent)`
-- `logseq.API['tag-add-property'](tagName, propName)` - name-based only
-- `logseq.API['tag-remove-property'](tagName, propName)` - name-based only
-- `logseq.Editor.addTagProperty(tagId, propertyIdOrName)` - accepts UUIDs or names
-- `logseq.Editor.removeTagProperty(tagId, propertyIdOrName)` - accepts UUIDs or names
+- **`parent.logseq.api.add_tag_property(tagUuid, propName)`** ✅ Confirmed working
+- **`parent.logseq.api.remove_tag_property(tagUuid, propName)`** ✅ Confirmed working
+- `logseq.API['tag-add-property'](tagName, propName)` - may be undefined in plugin context
+- `logseq.Editor.addTagProperty(tagId, propertyIdOrName)` - may not be available in all versions
 
 ### Property Management
 - `logseq.Editor.upsertBlockProperty(uuid, key, value)`
