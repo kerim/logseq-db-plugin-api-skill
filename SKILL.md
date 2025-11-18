@@ -1,6 +1,6 @@
 ---
 name: logseq-db-plugin-api
-version: 1.2.0
+version: 1.3.0
 description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling, EDN import capabilities, and proper Vite bundling setup.
 ---
 
@@ -1152,6 +1152,97 @@ Separate entry points for development and production (added in commit 501230b0d)
 - In development mode: Logseq loads `devEntry`
 - In production mode: Logseq loads `entry`
 - If `devEntry` not specified: falls back to `entry`
+
+### API Discovery in Console
+
+**How to discover undocumented APIs**: Many Logseq plugin APIs are not fully documented. You can explore available APIs using the browser console.
+
+**Key Insight**: The Logseq console runs in the **parent frame**, not the plugin iframe. This means you can test APIs directly in the console that may need `parent.logseq.api` in your plugin code.
+
+#### Discovering Available Methods
+
+```javascript
+// In Logseq console (DevTools → Console)
+
+// List all API methods containing 'tag'
+Object.keys(logseq.api).filter(k => k.includes('tag'))
+// Output: ['add_tag_property', 'remove_tag_property', 'create_tag', ...]
+
+// List all API methods containing 'property'
+Object.keys(logseq.api).filter(k => k.includes('property'))
+
+// List all available APIs
+Object.keys(logseq.api).sort()
+
+// Check method signature (if available)
+console.log(logseq.api.add_tag_property.toString())
+```
+
+#### Testing APIs Directly
+
+Before implementing in your plugin, test APIs in the console:
+
+```javascript
+// Get a tag UUID first
+const tag = await logseq.Editor.getTag('zot')
+console.log('Tag UUID:', tag.uuid)
+
+// Test adding a property to the tag
+await logseq.api.add_tag_property(tag.uuid, 'testProperty')
+// If it works, you'll see the property added to the tag schema
+
+// Test removing it
+await logseq.api.remove_tag_property(tag.uuid, 'testProperty')
+```
+
+#### Translating Console Commands to Plugin Code
+
+**In Console** (parent frame):
+```javascript
+await logseq.api.add_tag_property(tagUuid, 'author')
+```
+
+**In Plugin** (iframe context):
+```typescript
+// @ts-ignore
+const parentLogseq = (window as any).parent?.logseq
+await parentLogseq.api.add_tag_property(tagUuid, 'author')
+```
+
+#### Discovering Property Namespaces
+
+```javascript
+// Get a page and inspect its properties
+const page = await logseq.Editor.getCurrentPage()
+console.log('Page properties:', Object.keys(page))
+
+// Look for property keys with namespaces
+// Example: ":plugin.property.my-plugin/title"
+//          ":logseq.property/created-at"
+```
+
+#### Common Discovery Patterns
+
+```javascript
+// 1. Find all 'Editor' methods
+Object.keys(logseq.Editor)
+
+// 2. Find all 'DB' methods
+Object.keys(logseq.DB)
+
+// 3. Find all 'API' methods (snake_case style)
+Object.keys(logseq.API)
+
+// 4. Search by keyword
+const keyword = 'block'
+[
+  ...Object.keys(logseq.Editor).filter(k => k.includes(keyword)),
+  ...Object.keys(logseq.DB).filter(k => k.includes(keyword)),
+  ...Object.keys(logseq.API).filter(k => k.includes(keyword))
+]
+```
+
+**Best Practice**: Always test new or undocumented APIs in the console before writing plugin code. This helps you understand the correct parameters and return values.
 
 ---
 

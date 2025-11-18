@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.0] - 2025-11-18
+
+### Added
+- **API Discovery in Console** - New section in Development Features
+  - How to discover undocumented Logseq plugin APIs using browser console
+  - Explains parent frame vs. plugin iframe context
+  - Methods for listing available APIs by keyword
+  - Testing APIs in console before implementing in plugins
+  - Translating console commands to plugin code
+  - Property namespace discovery techniques
+  - Common discovery patterns for Editor, DB, and API methods
+
+### Documentation
+- Enhanced development workflow with practical API discovery techniques
+- Added best practices for exploring undocumented APIs
+- Helps developers understand parent frame context differences
+
+---
+
 ## [1.1.0] - 2025-11-17
 
 ### Added
