@@ -1,7 +1,7 @@
 ---
 name: logseq-db-plugin-api
-version: 1.5.0
-description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling (including upsertProperty with 7/8 confirmed working property value formats), EDN import capabilities, and proper Vite bundling setup.
+version: 1.6.0
+description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling (including upsertProperty with ALL 8 property types confirmed working - 100% success rate including DATE properties), EDN import capabilities, and proper Vite bundling setup.
 ---
 
 # Logseq DB Plugin API Development
@@ -817,7 +817,7 @@ await logseq.API['db-based-save-block-properties!'](
 - Once set, type is generally enforced
 - Use correct type to avoid validation errors
 
-**Property Value Formats** (87.5% success rate):
+**Property Value Formats** (100% success rate):
 
 | Type | Example Value | Status | Notes |
 |------|---------------|--------|-------|
@@ -828,7 +828,7 @@ await logseq.API['db-based-save-block-properties!'](
 | Checkbox | `true` or `false` | ✅ Confirmed | Boolean value. Stored as direct boolean value. |
 | URL | `"https://..."` | ✅ Confirmed | Plain URL string. Stored as entity reference. |
 | Node | `"Page Name"` | ✅ Confirmed | Page name string (not UUID). Stored as entity reference. |
-| Date | *No working format* | ❌ Unsolved | Cannot be set via `createPage()`. See limitations below. |
+| Date | `journalPage.id` | ✅ **SOLVED** | Journal page entity ID (number). See DATE Properties section below. |
 | Multi-value | `["a", "b", "c"]` | ⚠️ Partial | Arrays work for text, unclear for other types |
 
 **Property Type Definition with `upsertProperty`** ✅
@@ -873,7 +873,7 @@ const page = await logseq.Editor.createPage('Research Paper', {
 - Without type definition: Numbers interpreted as entity references → ERROR
 - With type definition: Logseq knows it's a value, not a reference → SUCCESS
 
-**Complete Working Example** (7 of 8 types confirmed):
+**Complete Working Example** (ALL 8 types confirmed):
 ```typescript
 // 1. Define all property types FIRST
 await logseq.Editor.upsertProperty('myString', { type: 'string' })
@@ -883,8 +883,12 @@ await logseq.Editor.upsertProperty('myCheckbox', { type: 'checkbox' })
 await logseq.Editor.upsertProperty('myUrl', { type: 'url' })
 await logseq.Editor.upsertProperty('myNode', { type: 'node' })
 await logseq.Editor.upsertProperty('myDefault', { type: 'default' })
+await logseq.Editor.upsertProperty('myDate', { type: 'date' })  // ← DATE type!
 
-// 2. Create pages with properly typed properties
+// 2. Create journal page for date property
+const journalPage = await logseq.Editor.createPage('2024-12-25', {}, { redirect: false })
+
+// 3. Create pages with properly typed properties (ALL 8 types!)
 const page = await logseq.Editor.createPage('Test Page', {
   myString: 'Plain text value',                    // ✅ String
   myNumber: 2025,                                   // ✅ Number
@@ -892,8 +896,8 @@ const page = await logseq.Editor.createPage('Test Page', {
   myCheckbox: true,                                 // ✅ Boolean
   myUrl: 'https://example.com',                     // ✅ URL string
   myNode: 'Referenced Page Name',                   // ✅ Page name
-  myDefault: 'Text content'                         // ✅ Plain text
-  // Note: date property values cannot be set this way
+  myDefault: 'Text content',                        // ✅ Plain text
+  myDate: journalPage.id                            // ✅ Date (journal page ID!)
 })
 ```
 
@@ -910,49 +914,72 @@ const page = await logseq.Editor.createPage('Test Page', {
    - When you read entity reference types, you get entity ID numbers, not the actual values
    - To get actual values, need Datalog queries with proper pull patterns (see Property Value Dereferencing section)
 
-**Known Limitations** (as of 2025-11-18):
-- ✅ Type definition works for ALL 8 types
-- ✅ Value setting works for 7 types: `default`, `string`, `number`, `datetime`, `checkbox`, `url`, `node`
-- ❌ **Date property values UNSOLVED**:
-  - Property type definition works
-  - ALL tested value formats fail (100% failure rate across ~20+ tested formats)
-  - Cannot be set via `createPage()` properties parameter
-  - Tested: ISO dates, journal formats, timestamps, Date objects, page references, entity IDs
-  - Error: "Schema validation failed... should be a journal date"
-  - **Hypothesis**: Requires different API mechanism (possibly `upsertBlockProperty()` after creation, or undiscovered approach)
+**DATE Properties - SOLVED** ✅
+
+**Problem**: Date properties require a special value format - journal page entity IDs.
+
+**Solution** (as of 2025-11-18):
+
+Date properties work with **journal page entity ID (number)**, not date strings or timestamps.
+
+```typescript
+// Step 1: Define the date property type
+await logseq.Editor.upsertProperty('eventDate', { type: 'date' })
+
+// Step 2: Create or get a journal page using ISO date format (YYYY-MM-DD)
+const journalPage = await logseq.Editor.createPage('2024-12-25', {}, { redirect: false })
+// This automatically creates a page with journalDay property (20241225)
+
+// Step 3: Use the journal page's ID (entity number) as the date property value
+const eventPage = await logseq.Editor.createPage('Christmas Party', {
+  eventDate: journalPage.id  // ← Use .id property (e.g., 298)
+})
+```
+
+**Key Points**:
+- **CORRECT format**: `journalPage.id` (entity number like 298)
+  - ✅ Works perfectly with NO warnings
+  - ✅ Value is properly stored and can be read back
+- **WRONG formats**: `journalPage.uuid` or `journalPage.name`
+  - ⚠️ Trigger "should be a journal date" warnings
+  - ❌ Property value shows as `undefined` when read back
+
+**Journal Page Creation**:
+- Use ISO date format: `createPage('YYYY-MM-DD')`
+- Logseq automatically adds `journalDay` property (YYYYMMDD integer)
+- Returns page with `.id` (entity number), `.uuid`, `.name` properties
 
 **Best Practice**:
 Define property types during plugin initialization, before creating any pages:
 
 ```typescript
 async function main() {
-  // Initialize property types (7 of 8 types confirmed working)
+  // Initialize property types (ALL 8 types now working!)
   const propertyTypes = {
-    // ✅ All confirmed working value formats:
-    title: 'default',     // Text with entity reference
-    author: 'string',     // Direct string value
-    year: 'number',       // Number with entity reference
-    dateModified: 'datetime',  // Date.now() milliseconds
-    isPublic: 'checkbox', // Boolean true/false
-    url: 'url',           // Plain URL string with entity reference
-    relatedPage: 'node',  // Page name with entity reference
-    // ❌ Date values cannot be set via createPage():
-    // eventDate: 'date'  // Type definition works, but values fail
+    title: 'default',         // Text with entity reference
+    author: 'string',         // Direct string value
+    year: 'number',           // Number with entity reference
+    dateModified: 'datetime', // Date.now() milliseconds
+    isPublic: 'checkbox',     // Boolean true/false
+    url: 'url',               // Plain URL string with entity reference
+    relatedPage: 'node',      // Page name with entity reference
+    eventDate: 'date'         // ✅ Date (journal page ID!)
   }
 
   for (const [name, type] of Object.entries(propertyTypes)) {
     await logseq.Editor.upsertProperty(name, { type })
   }
 
-  // Now safe to use all 7 working property types throughout plugin lifecycle
+  // Now safe to use ALL 8 property types throughout plugin lifecycle
 }
 
 logseq.ready(main)
 ```
 
 **References**:
-- POC: `/Users/niyaro/Documents/Code/Logseq API/old POCs/logseq-property-type-poc` (v0.0.12)
-- FUTURE-RESEARCH.md: Questions #2 (NUMBER properties) ✅ SOLVED and #3 (Property types) ✅ MOSTLY SOLVED (87.5%)
+- POC: `/Users/niyaro/Documents/Code/Logseq API/old POCs/logseq-property-type-poc` (v0.0.12 - types 1-7)
+- POC: `/Users/niyaro/Documents/Code/Logseq API/active POCs/logseq-journal-date-property-poc` (v0.0.2 - date type)
+- FUTURE-RESEARCH.md: Questions #2 (NUMBER properties) ✅ SOLVED and #3 (Property types) ✅ FULLY SOLVED (100%)
 - LEARNINGS.md: Complete property value format reference and findings
 
 ### Reserved Property Names

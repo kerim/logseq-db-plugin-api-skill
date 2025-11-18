@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.6.0] - 2025-11-18
+
+### Added
+- **DATE Property Solution** - Complete workflow for setting date properties ✅
+  - Solution: Use journal page entity ID (`journalPage.id`)
+  - Step-by-step workflow: define type → create journal page → use ID
+  - Key points: CORRECT vs. WRONG formats documented
+  - Journal page creation explained (ISO date format, automatic `journalDay` property)
+  - Full working example with all 8 property types
+
+### Changed
+- **100% Property Type Success Rate** - ALL 8 types now working!
+  - Updated from 87.5% (7/8) to 100% (8/8) success rate
+  - Property value formats table: Added DATE type with `journalPage.id` format
+  - Complete working example: Now includes all 8 types including date
+  - Best practice code: Updated to include date property initialization
+  - References: Added `logseq-journal-date-property-poc` v0.0.2
+  - FUTURE-RESEARCH.md reference: Updated to "FULLY SOLVED (100%)"
+  - Skill description: Updated to reflect 100% success rate
+
+### Removed
+- "Known Limitations" section about unsolvable date properties
+- All references to date properties being "unsolved" or "unsupported"
+
+### Fixed
+- Date properties are now fully documented and working
+
 ## [1.5.0] - 2025-11-18
 
 ### Added
