@@ -1,21 +1,21 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 1.5.0
+**Version**: 1.6.0
 **Updated**: 2025-11-18
 
 A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**.
 
 ## Overview
 
-This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling (with 7 of 8 confirmed working property value formats), EDN import capabilities, proper Vite bundling setup, and best practices for DB-specific development.
+This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling (with **ALL 8 property types confirmed working - 100% success rate!**), EDN import capabilities, proper Vite bundling setup, and best practices for DB-specific development.
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
 
-## What's New in v1.5.0
+## What's New in v1.6.0
 
-### Property Value Formats - 87.5% SOLVED! ✅
+### Property Value Formats - 100% SOLVED! ✅
 
-**Major breakthrough**: Discovered working value formats for 7 out of 8 property types!
+**COMPLETE BREAKTHROUGH**: All 8 property types now have confirmed working value formats!
 
 - ✅ **string**: Plain string values → `"text"`
 - ✅ **number**: Integer/float values → `2025`
@@ -24,22 +24,45 @@ This skill provides essential knowledge for building Logseq plugins that work wi
 - ✅ **url**: Plain URL strings → `"https://..."`
 - ✅ **node**: Page name strings → `"Page Name"`
 - ✅ **default**: Plain text → `"text"`
-- ❌ **date**: No working format found (cannot be set via `createPage()`)
+- ✅ **date**: Journal page entity ID → `journalPage.id` **← NEWLY SOLVED!**
+
+### Date Property Solution 🎉
+
+**The Missing Piece**: Date properties require journal page entity IDs!
+
+```typescript
+// 1. Define date property type
+await logseq.Editor.upsertProperty('eventDate', { type: 'date' })
+
+// 2. Create journal page with ISO date format
+const journalPage = await logseq.Editor.createPage('2024-12-25', {}, { redirect: false })
+
+// 3. Use journal page ID as date value
+const event = await logseq.Editor.createPage('Christmas Party', {
+  eventDate: journalPage.id  // ← Entity ID like 298
+})
+```
+
+**Key Points**:
+- ✅ Use `journalPage.id` (entity number) - works perfectly, NO warnings
+- ❌ Don't use `journalPage.uuid` or `journalPage.name` - trigger validation warnings
 
 ### Critical Discoveries
 
 1. **Namespaced Property Keys**: Plugin properties stored as `:plugin.property.{plugin-id}/{name}`
 2. **Entity References vs Direct Values**: Some types store entity IDs, others store actual values
-3. **Complete Working Examples**: Full code showing all 7 working property types
+3. **Complete Working Examples**: Full code showing ALL 8 working property types
+4. **Date Properties**: Require journal page entity references (newly discovered!)
 
 ### What's Changed
 
-- Property types table updated with confirmed value formats
-- `upsertProperty` examples enhanced with all 7 working types
-- Date property limitations fully documented
-- Best practices updated with comprehensive examples
+- **100% success rate**: Updated from 87.5% (7/8) to 100% (8/8)
+- Property types table: Added DATE type with `journalPage.id` format
+- `upsertProperty` examples: Now include all 8 types including date
+- Best practices: Updated to include date property initialization
+- Removed "Known Limitations" section about unsolvable date properties
 
-See [CHANGELOG.md](CHANGELOG.md) for complete v1.5.0 details.
+See [CHANGELOG.md](CHANGELOG.md) for complete v1.6.0 details.
 
 ## Previous Updates
 
