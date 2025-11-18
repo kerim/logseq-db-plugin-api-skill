@@ -1,17 +1,49 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 1.2.0
+**Version**: 1.5.0
 **Updated**: 2025-11-18
 
 A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**.
 
 ## Overview
 
-This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling, EDN import capabilities, proper Vite bundling setup, and best practices for DB-specific development.
+This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling (with 7 of 8 confirmed working property value formats), EDN import capabilities, proper Vite bundling setup, and best practices for DB-specific development.
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
 
-## What's New in v1.2.0
+## What's New in v1.5.0
+
+### Property Value Formats - 87.5% SOLVED! ✅
+
+**Major breakthrough**: Discovered working value formats for 7 out of 8 property types!
+
+- ✅ **string**: Plain string values → `"text"`
+- ✅ **number**: Integer/float values → `2025`
+- ✅ **datetime**: Milliseconds timestamp → `Date.now()`
+- ✅ **checkbox**: Boolean values → `true` / `false`
+- ✅ **url**: Plain URL strings → `"https://..."`
+- ✅ **node**: Page name strings → `"Page Name"`
+- ✅ **default**: Plain text → `"text"`
+- ❌ **date**: No working format found (cannot be set via `createPage()`)
+
+### Critical Discoveries
+
+1. **Namespaced Property Keys**: Plugin properties stored as `:plugin.property.{plugin-id}/{name}`
+2. **Entity References vs Direct Values**: Some types store entity IDs, others store actual values
+3. **Complete Working Examples**: Full code showing all 7 working property types
+
+### What's Changed
+
+- Property types table updated with confirmed value formats
+- `upsertProperty` examples enhanced with all 7 working types
+- Date property limitations fully documented
+- Best practices updated with comprehensive examples
+
+See [CHANGELOG.md](CHANGELOG.md) for complete v1.5.0 details.
+
+## Previous Updates
+
+### v1.4.0 - Property Type Definition API
 
 ### New: Project Setup & Bundling Section 🚀
 

@@ -1,7 +1,7 @@
 ---
 name: logseq-db-plugin-api
-version: 1.4.0
-description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling (including upsertProperty for explicit type definition), EDN import capabilities, and proper Vite bundling setup.
+version: 1.5.0
+description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling (including upsertProperty with 7/8 confirmed working property value formats), EDN import capabilities, and proper Vite bundling setup.
 ---
 
 # Logseq DB Plugin API Development
@@ -817,19 +817,19 @@ await logseq.API['db-based-save-block-properties!'](
 - Once set, type is generally enforced
 - Use correct type to avoid validation errors
 
-**Common Property Types**:
+**Property Value Formats** (87.5% success rate):
 
 | Type | Example Value | Status | Notes |
 |------|---------------|--------|-------|
-| Text/Default | `"Jane Doe"` | ✅ Confirmed | Default type, allows any text |
-| String | `"Jane Doe"` | ✅ Confirmed | Explicit text type |
-| Number | `2023` | ✅ Confirmed | Requires `upsertProperty` first (see below) |
-| Date | `"2023-05-15"` | ⚠️ Unknown | Format unclear, validation fails |
-| DateTime | `"2023-05-15T14:30:00"` | ⚠️ Unknown | Format unclear, not yet tested |
-| URL | `"https://..."` | ⚠️ Unknown | Format unclear, not yet tested |
-| Checkbox | `true` or `false` | ⚠️ Unknown | Format unclear, not yet tested |
-| Node | `"Page Name"` | ⚠️ Unknown | Format unclear, not yet tested |
-| Multi-value | `["a", "b", "c"]` | ⚠️ Unknown | Arrays work for text, unclear for other types |
+| Text/Default | `"Jane Doe"` | ✅ Confirmed | Default type, allows any text. Stored as entity reference. |
+| String | `"Jane Doe"` | ✅ Confirmed | Explicit text type. Stored as direct value. |
+| Number | `2023` | ✅ Confirmed | Requires `upsertProperty` first. Stored as entity reference. |
+| DateTime | `Date.now()` | ✅ Confirmed | Milliseconds timestamp. Stored as direct numeric value. |
+| Checkbox | `true` or `false` | ✅ Confirmed | Boolean value. Stored as direct boolean value. |
+| URL | `"https://..."` | ✅ Confirmed | Plain URL string. Stored as entity reference. |
+| Node | `"Page Name"` | ✅ Confirmed | Page name string (not UUID). Stored as entity reference. |
+| Date | *No working format* | ❌ Unsolved | Cannot be set via `createPage()`. See limitations below. |
+| Multi-value | `["a", "b", "c"]` | ⚠️ Partial | Arrays work for text, unclear for other types |
 
 **Property Type Definition with `upsertProperty`** ✅
 
@@ -873,58 +873,87 @@ const page = await logseq.Editor.createPage('Research Paper', {
 - Without type definition: Numbers interpreted as entity references → ERROR
 - With type definition: Logseq knows it's a value, not a reference → SUCCESS
 
-**Complete Workflow** (confirmed working for default/string/number):
+**Complete Working Example** (7 of 8 types confirmed):
 ```typescript
-// Define all property types upfront
-await logseq.Editor.upsertProperty('year', { type: 'number' })
-await logseq.Editor.upsertProperty('author', { type: 'string' })
-await logseq.Editor.upsertProperty('title', { type: 'default' })
+// 1. Define all property types FIRST
+await logseq.Editor.upsertProperty('myString', { type: 'string' })
+await logseq.Editor.upsertProperty('myNumber', { type: 'number' })
+await logseq.Editor.upsertProperty('myDateTime', { type: 'datetime' })
+await logseq.Editor.upsertProperty('myCheckbox', { type: 'checkbox' })
+await logseq.Editor.upsertProperty('myUrl', { type: 'url' })
+await logseq.Editor.upsertProperty('myNode', { type: 'node' })
+await logseq.Editor.upsertProperty('myDefault', { type: 'default' })
 
-// Now create pages with properly typed properties
-const page = await logseq.Editor.createPage('My Paper', {
-  year: 2025,           // NUMBER - ✅ CONFIRMED WORKING
-  author: 'Jane Doe',   // STRING - ✅ CONFIRMED WORKING
-  title: 'My Title'     // DEFAULT - ✅ CONFIRMED WORKING
+// 2. Create pages with properly typed properties
+const page = await logseq.Editor.createPage('Test Page', {
+  myString: 'Plain text value',                    // ✅ String
+  myNumber: 2025,                                   // ✅ Number
+  myDateTime: Date.now(),                           // ✅ Milliseconds timestamp
+  myCheckbox: true,                                 // ✅ Boolean
+  myUrl: 'https://example.com',                     // ✅ URL string
+  myNode: 'Referenced Page Name',                   // ✅ Page name
+  myDefault: 'Text content'                         // ✅ Plain text
+  // Note: date property values cannot be set this way
 })
 ```
 
-**Note**: The above only shows CONFIRMED working property types. For date, datetime, checkbox, url, and node properties, the correct value format is currently unknown (see Known Limitations below).
+**Critical Discoveries**:
+
+1. **Namespaced Property Keys**: Plugin properties are stored with namespaced keys:
+   - Format: `:plugin.property.{plugin-id}/{property-name}`
+   - Example: `:plugin.property.my-plugin/myString`
+   - Must use namespaced key when reading back with `getPage()`
+
+2. **Entity References vs Direct Values**: Some property types store entity IDs, others store actual values:
+   - **Direct values**: `string`, `boolean` (checkbox), `number` (datetime timestamps)
+   - **Entity references**: `default`, `number`, `url`, `node`
+   - When you read entity reference types, you get entity ID numbers, not the actual values
+   - To get actual values, need Datalog queries with proper pull patterns (see Property Value Dereferencing section)
 
 **Known Limitations** (as of 2025-11-18):
-- ✅ Type definition works for ALL types
-- ✅ Value setting works for: `default`, `string`, `number`
-- ⚠️ Value setting for complex types needs research:
-  - `date` - Values fail validation: "should be a journal date"
-  - `datetime`, `checkbox`, `url`, `node` - Format unclear
-  - May require different API or value format
+- ✅ Type definition works for ALL 8 types
+- ✅ Value setting works for 7 types: `default`, `string`, `number`, `datetime`, `checkbox`, `url`, `node`
+- ❌ **Date property values UNSOLVED**:
+  - Property type definition works
+  - ALL tested value formats fail (100% failure rate across ~20+ tested formats)
+  - Cannot be set via `createPage()` properties parameter
+  - Tested: ISO dates, journal formats, timestamps, Date objects, page references, entity IDs
+  - Error: "Schema validation failed... should be a journal date"
+  - **Hypothesis**: Requires different API mechanism (possibly `upsertBlockProperty()` after creation, or undiscovered approach)
 
 **Best Practice**:
 Define property types during plugin initialization, before creating any pages:
 
 ```typescript
 async function main() {
-  // Initialize property types (only use confirmed working types)
+  // Initialize property types (7 of 8 types confirmed working)
   const propertyTypes = {
-    year: 'number',      // ✅ Confirmed working
-    author: 'string',    // ✅ Confirmed working
-    title: 'default',    // ✅ Confirmed working
-    // Note: date, datetime, checkbox, url, node value formats unknown
+    // ✅ All confirmed working value formats:
+    title: 'default',     // Text with entity reference
+    author: 'string',     // Direct string value
+    year: 'number',       // Number with entity reference
+    dateModified: 'datetime',  // Date.now() milliseconds
+    isPublic: 'checkbox', // Boolean true/false
+    url: 'url',           // Plain URL string with entity reference
+    relatedPage: 'node',  // Page name with entity reference
+    // ❌ Date values cannot be set via createPage():
+    // eventDate: 'date'  // Type definition works, but values fail
   }
 
   for (const [name, type] of Object.entries(propertyTypes)) {
     await logseq.Editor.upsertProperty(name, { type })
   }
 
-  // Now safe to use default/string/number properties throughout plugin lifecycle
+  // Now safe to use all 7 working property types throughout plugin lifecycle
 }
 
 logseq.ready(main)
 ```
 
 **References**:
-- POC: `/Users/niyaro/Documents/Code/Logseq API/active POCs/logseq-property-type-poc` (v0.0.8)
-- FUTURE-RESEARCH.md: Questions #2 (NUMBER properties) and #3 (Property types) - Both SOLVED
-- LEARNINGS.md: 2025-11-18 updates with complete `upsertProperty` documentation
+- POC: `/Users/niyaro/Documents/Code/Logseq API/old POCs/logseq-property-type-poc` (v0.0.12)
+- FUTURE-RESEARCH.md: Questions #2 (NUMBER properties) ✅ SOLVED and #3 (Property types) ✅ MOSTLY SOLVED (87.5%)
+- LEARNINGS.md: Complete property value format reference and findings
 
 ### Reserved Property Names
 

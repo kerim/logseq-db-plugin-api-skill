@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.5.0] - 2025-11-18
+
+### Added
+- **Complete Property Value Format Reference** - 87.5% success rate (7 of 8 types)
+  - Comprehensive table showing working value formats for all property types
+  - Confirmed working formats for: string, number, datetime, checkbox, url, node, default
+  - Complete code example showing all 7 working property types
+  - Storage behavior documented: entity references vs. direct values
+
+- **Critical Discoveries Section**
+  - Namespaced property keys: `:plugin.property.{plugin-id}/{property-name}` format
+  - Entity reference vs. direct value storage patterns
+  - Which types store entity IDs vs. actual values
+  - How to read back values with correct key format
+
+- **Date Property Limitation Documentation**
+  - Exhaustive testing results (~20+ formats tested, 100% failure rate)
+  - All tested formats documented (ISO, journal, timestamps, objects, entity IDs)
+  - Error messages and validation failures explained
+  - Hypothesis for future research documented
+
+### Changed
+- Updated property types table with confirmed value formats for all 8 types
+- Enhanced `upsertProperty` examples to show all 7 working types
+- Updated best practice code to include datetime, checkbox, url, node examples
+- Changed POC reference from `active POCs` to `old POCs` (v0.0.12)
+- Updated FUTURE-RESEARCH.md reference to reflect 87.5% success rate
+
+### Fixed
+- Property value format documentation now accurate for all types
+- Removed "format unclear" status for datetime, checkbox, url, node
+- Clarified that date property TYPE definition works, but VALUES cannot be set
+
+### References
+- POC: `/Users/niyaro/Documents/Code/Logseq API/old POCs/logseq-property-type-poc` (v0.0.12)
+- Research: FUTURE-RESEARCH.md Question #3 - MOSTLY SOLVED (87.5%)
+- Documentation: LEARNINGS.md with complete property value format reference
+
+---
+
 ## [1.4.0] - 2025-11-18
 
 ### Added
