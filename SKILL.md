@@ -1,7 +1,7 @@
 ---
 name: logseq-db-plugin-api
-version: 1.1.0
-description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling, and EDN import capabilities.
+version: 1.2.0
+description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling, EDN import capabilities, and proper Vite bundling setup.
 ---
 
 # Logseq DB Plugin API Development
@@ -98,6 +98,212 @@ await logseq.Editor.createPage('My Page', {
 - **Option 1**: Property API (always available in plugins)
 - **Option 2**: EDN import (NEW! Available as of recent commits)
 - **Option 3**: Template auto-apply + property API
+
+---
+
+## Project Setup & Bundling
+
+**CRITICAL**: Proper bundling is essential for plugin performance. Plugins must be bundled into a single optimized file for fast loading.
+
+### Why Bundling Matters
+
+**Without proper bundling**:
+- Slow plugin load times (TypeScript compilation overhead)
+- Multiple file requests
+- No minification
+- Poor user experience
+
+**With Vite bundling**:
+- Fast plugin loading (single minified file)
+- Optimized code with tree-shaking
+- Watch mode for development
+- Production-ready builds
+
+### Recommended Setup: Vite + vite-plugin-logseq
+
+**Use Vite as your bundler** - it's the fastest and most reliable option for Logseq plugins.
+
+#### package.json
+
+```json
+{
+  "name": "my-logseq-plugin",
+  "version": "0.1.0",
+  "description": "My Logseq DB plugin",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": ["logseq", "plugin"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@logseq/libs": "^0.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^7.2.2",
+    "vite-plugin-logseq": "^1.1.2"
+  },
+  "logseq": {
+    "id": "my-plugin-id",
+    "title": "My Plugin Title",
+    "description": "What my plugin does",
+    "main": "dist/index.html"
+  }
+}
+```
+
+**Key Points**:
+- `@logseq/libs`: Use `^0.2.8` or later for full DB support
+- `vite-plugin-logseq`: Essential for Logseq plugin bundling
+- `main` in `logseq` config: Must point to `dist/index.html` (not `.js`)
+- Scripts: Use `vite build` for production, `vite build --watch` for dev
+
+#### vite.config.ts
+
+```typescript
+import { defineConfig } from 'vite'
+import logseqDevPlugin from 'vite-plugin-logseq'
+
+export default defineConfig({
+  plugins: [logseqDevPlugin()],
+  build: {
+    target: 'esnext',
+    minify: 'esbuild'
+  }
+})
+```
+
+**What this does**:
+- `logseqDevPlugin()`: Handles Logseq plugin packaging
+- `target: 'esnext'`: Modern JavaScript (Logseq supports it)
+- `minify: 'esbuild'`: Fast minification
+
+#### tsconfig.json
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"]
+}
+```
+
+#### Project Structure
+
+```
+my-plugin/
+├── src/
+│   └── index.ts          # Your plugin code
+├── dist/                 # Build output (gitignored)
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── .gitignore
+└── README.md
+```
+
+**.gitignore**:
+```
+node_modules/
+dist/
+*.log
+.DS_Store
+```
+
+### Build Workflow
+
+#### Initial Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Build plugin
+npm run build
+```
+
+#### Development Workflow
+
+```bash
+# Start watch mode (rebuilds on file changes)
+npm run dev
+```
+
+**In Logseq**:
+1. Settings → Plugins → Load unpacked plugin
+2. Select your plugin directory
+3. Logseq will detect changes and auto-reload
+
+#### Production Build
+
+```bash
+# Clean previous build
+npm run clean
+
+# Build optimized version
+npm run build
+```
+
+### Common Issues
+
+#### Issue: Plugin loads slowly
+
+**Cause**: Not using Vite bundling (using raw TypeScript)
+
+**Solution**: Set up Vite as shown above
+
+#### Issue: `dist/index.html` not found
+
+**Cause**: Wrong `main` path in `package.json` logseq config
+
+**Solution**: Change `"main": "dist/index.js"` → `"main": "dist/index.html"`
+
+#### Issue: Build fails with module errors
+
+**Cause**: Missing `vite-plugin-logseq`
+
+**Solution**:
+```bash
+npm install --save-dev vite-plugin-logseq
+```
+
+#### Issue: Plugin doesn't reload in dev mode
+
+**Cause**: Logseq not detecting file changes
+
+**Solution**:
+1. Unload and reload plugin manually in Logseq
+2. Check that `npm run dev` is running
+3. Verify `dist/` directory is being updated
+
+### Version Requirements
+
+**Minimum versions for DB plugins**:
+- `@logseq/libs`: `^0.2.8` (for full DB API support)
+- `typescript`: `^5.0.0`
+- `vite`: `^7.0.0`
+- `vite-plugin-logseq`: `^1.1.0`
+
+### Example: Complete Setup
+
+See working example at:
+- `/Users/niyaro/Documents/Code/Logseq/logseq-tag-schema-poc/`
+- Demonstrates proper Vite bundling
+- Fast loading times
+- Clean development workflow
 
 ---
 

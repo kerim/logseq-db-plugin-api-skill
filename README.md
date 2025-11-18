@@ -1,17 +1,29 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 1.1.0
-**Updated**: 2025-11-17
+**Version**: 1.2.0
+**Updated**: 2025-11-18
 
 A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**.
 
 ## Overview
 
-This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling, EDN import capabilities, and best practices for DB-specific development.
+This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling, EDN import capabilities, proper Vite bundling setup, and best practices for DB-specific development.
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
 
-## What's New in v1.1.0
+## What's New in v1.2.0
+
+### New: Project Setup & Bundling Section 🚀
+
+- **Complete Vite bundling guide**: Proper setup for fast plugin loading
+- **vite-plugin-logseq**: Essential bundler configuration
+- **Development workflow**: Watch mode, hot reloading, production builds
+- **Common bundling issues**: Solutions for slow loading, build errors
+- **Performance optimization**: Minification, tree-shaking, single file output
+
+**Why this matters**: Without proper bundling, plugins load slowly and provide poor user experience. This update ensures you set up Vite correctly from the start.
+
+### Previous Updates (v1.1.0)
 
 ### Confirmed Working APIs ✅
 - **Tag Schema Definition**: Documented working `parent.logseq.api.add_tag_property()` API
@@ -54,35 +66,41 @@ This skill documents the latest Logseq plugin API features added in recent commi
 
 ### Core Topics
 
-1. **Page & Block Management**
+1. **Project Setup & Bundling** 🆕
+   - Vite configuration for fast plugin loading
+   - vite-plugin-logseq setup
+   - Development vs. production builds
+   - Common bundling issues and solutions
+
+2. **Page & Block Management**
    - Creating pages with tags, properties, and custom UUIDs
    - Inserting nested block structures
    - Batch operations
 
-2. **Tag/Class System**
+3. **Tag/Class System**
    - Creating tags programmatically
    - Defining tag schemas (properties)
    - Plugin-specific namespaces
    - Tag association and removal
 
-3. **Property Management**
+4. **Property Management**
    - Setting typed properties during creation
    - Multi-value properties
    - Reserved property names to avoid
    - Property auto-hide behavior
 
-4. **Import Workflows**
+5. **Import Workflows**
    - Property API approach (recommended)
    - Template auto-apply pattern
    - EDN import considerations
 
-5. **Queries & Database**
+6. **Queries & Database**
    - Datalog queries for DB graphs
    - Tag-based retrieval
    - Property filtering
    - Result caching patterns
 
-6. **Common Pitfalls**
+7. **Common Pitfalls**
    - Tag creation validation
    - Property name conflicts
    - Query syntax issues
