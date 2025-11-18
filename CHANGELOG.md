@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.4.0] - 2025-11-18
+
+### Added
+- **Property Type Definition API** - `logseq.Editor.upsertProperty()` documentation
+  - Complete API signature and usage examples
+  - All 9 valid property types documented: default, string, number, date, datetime, checkbox, url, node, json
+  - Note that `text` is invalid (use `default` or `string`)
+
+- **NUMBER Property Solution** - Solved long-standing NUMBER property issue
+  - Documented cause: numbers interpreted as entity references without type definition
+  - Solution: Define property type with `upsertProperty` BEFORE using numeric values
+  - Complete workflow examples for plugin initialization
+  - Best practices for upfront property type definition
+
+### Fixed
+- **NUMBER Property Limitation** - Removed old workaround recommendation
+  - OLD: Use string values like `year: '2025'` to avoid errors
+  - NEW: Define type first with `upsertProperty`, then use actual numbers: `year: 2025`
+  - Updated all examples to show correct approach
+
+### Changed
+- Updated property types section with complete `upsertProperty` documentation
+- Added known limitations for complex property value setting (date, datetime, etc.)
+- Added references to property-type POC (v0.0.8) and research documentation
+
+### References
+- POC: `/Users/niyaro/Documents/Code/Logseq API/active POCs/logseq-property-type-poc` (v0.0.8)
+- Research: FUTURE-RESEARCH.md Questions #2 and #3 - Both SOLVED
+- Documentation: LEARNINGS.md 2025-11-18 updates
+
+---
+
 ## [1.3.0] - 2025-11-18
 
 ### Added

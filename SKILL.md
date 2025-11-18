@@ -1,7 +1,7 @@
 ---
 name: logseq-db-plugin-api
-version: 1.3.0
-description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling, EDN import capabilities, and proper Vite bundling setup.
+version: 1.4.0
+description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling (including upsertProperty for explicit type definition), EDN import capabilities, and proper Vite bundling setup.
 ---
 
 # Logseq DB Plugin API Development
@@ -828,43 +828,98 @@ await logseq.API['db-based-save-block-properties!'](
 | Checkbox | `true` or `false` | Boolean |
 | Multi-value | `["a", "b", "c"]` | Array of values |
 
-**CRITICAL LIMITATION: NUMBER Properties**
+**Property Type Definition with `upsertProperty`** ✅
 
-NUMBER properties currently have significant issues in Logseq DB when created via plugin API:
+**SOLVED** (as of 2025-11-18): You can now explicitly define property types using `logseq.Editor.upsertProperty`!
 
-**Problem**: Numbers are interpreted as entity ID references, not values.
-
-**Error Example**:
-```
-Error: Expected number or lookup ref for entity id, got 0
+**API Signature**:
+```typescript
+await logseq.Editor.upsertProperty(propertyName: string, options: { type: string })
 ```
 
-**Root Cause**: When you use `year: 0` or `year: 2025`, Logseq DB treats these as entity lookup IDs:
-- `0` → tries to find entity with ID 0 (doesn't exist)
-- `2025` → tries to find entity with ID 2025
+**Valid Property Types**:
+- `'default'` - Default text type
+- `'string'` - String type (explicit text)
+- `'number'` - Number type ✅
+- `'date'` - Date type
+- `'datetime'` - DateTime type
+- `'checkbox'` - Boolean/checkbox type
+- `'url'` - URL type
+- `'node'` - Node/page reference type
+- `'json'` - JSON type
 
-**Current Status** (as of 2025-11-17):
-- ❌ Cannot reliably create NUMBER properties via plugin API
-- ❌ No known workaround for NUMBER value vs. entity reference
-- ✅ TEXT properties work reliably
-- ❓ Unknown if NUMBER properties work when created through UI
+**IMPORTANT**: `'text'` is INVALID - use `'default'` or `'string'` instead.
 
-**Recommendation**:
-Use TEXT properties for all values until NUMBER property support is clarified:
+**NUMBER Properties - SOLVED** ✅
+
+**Problem (OLD)**: Numbers were interpreted as entity ID references, causing errors.
+
+**Solution (NEW)**: Define property type BEFORE using it!
 
 ```typescript
-// Instead of this:
-properties: {
-  year: 2023,  // ❌ May fail with entity ID error
-}
+// Step 1: Define property type FIRST
+await logseq.Editor.upsertProperty('year', { type: 'number' })
 
-// Use this:
-properties: {
-  year: '2023',  // ✅ Works reliably
-}
+// Step 2: Now you can use NUMBER values
+const page = await logseq.Editor.createPage('Research Paper', {
+  year: 2025  // ✅ Works! Stored as actual number
+})
 ```
 
-**Reference**: See POC at `/Users/niyaro/Documents/Code/Logseq/logseq-tag-schema-poc` for detailed testing results
+**Why This Works**:
+- Without type definition: Numbers interpreted as entity references → ERROR
+- With type definition: Logseq knows it's a value, not a reference → SUCCESS
+
+**Complete Workflow**:
+```typescript
+// Define all property types upfront
+await logseq.Editor.upsertProperty('year', { type: 'number' })
+await logseq.Editor.upsertProperty('author', { type: 'string' })
+await logseq.Editor.upsertProperty('published', { type: 'checkbox' })
+
+// Now create pages with properly typed properties
+const page = await logseq.Editor.createPage('My Paper', {
+  year: 2025,           // NUMBER
+  author: 'Jane Doe',   // STRING
+  published: true       // CHECKBOX
+})
+```
+
+**Known Limitations** (as of 2025-11-18):
+- ✅ Type definition works for ALL types
+- ✅ Value setting works for: `default`, `string`, `number`
+- ⚠️ Value setting for complex types needs research:
+  - `date` - Values fail validation: "should be a journal date"
+  - `datetime`, `checkbox`, `url`, `node` - Format unclear
+  - May require different API or value format
+
+**Best Practice**:
+Define property types during plugin initialization, before creating any pages:
+
+```typescript
+async function main() {
+  // Initialize property types
+  const propertyTypes = {
+    year: 'number',
+    author: 'string',
+    title: 'string',
+    published: 'checkbox'
+  }
+
+  for (const [name, type] of Object.entries(propertyTypes)) {
+    await logseq.Editor.upsertProperty(name, { type })
+  }
+
+  // Now safe to use these properties throughout plugin lifecycle
+}
+
+logseq.ready(main)
+```
+
+**References**:
+- POC: `/Users/niyaro/Documents/Code/Logseq API/active POCs/logseq-property-type-poc` (v0.0.8)
+- FUTURE-RESEARCH.md: Questions #2 (NUMBER properties) and #3 (Property types) - Both SOLVED
+- LEARNINGS.md: 2025-11-18 updates with complete `upsertProperty` documentation
 
 ### Reserved Property Names
 
