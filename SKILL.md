@@ -67,11 +67,12 @@ await logseq.Editor.upsertBlockProperty(blockUuid, 'author', 'Jane Doe')
 // Properties set during creation with type validation
 await logseq.Editor.createPage('My Page', {
   tags: ['zot'],
-  author: 'Jane Doe',      // text property
-  year: 2023,              // number property (see limitations below)
-  published: '2023-05-15'  // date property
+  author: 'Jane Doe',      // text/string property
+  year: 2023,              // number property (requires upsertProperty first - see below)
+  title: 'My Article'      // default/text property
 })
 // Note: Properties go at top level, NOT wrapped in properties:{}
+// Note: For number properties, define type with upsertProperty FIRST
 ```
 
 ### Tag System
@@ -818,15 +819,17 @@ await logseq.API['db-based-save-block-properties!'](
 
 **Common Property Types**:
 
-| Type | Example Value | Behavior |
-|------|---------------|----------|
-| Text | `"Jane Doe"` | Default type, allows any text |
-| Number | `2023` | Actual number, not string (see limitations below) |
-| Date | `"2023-05-15"` | Links to journal page |
-| DateTime | `"2023-05-15T14:30:00"` | Date + time |
-| URL | `"https://..."` | Clickable link |
-| Checkbox | `true` or `false` | Boolean |
-| Multi-value | `["a", "b", "c"]` | Array of values |
+| Type | Example Value | Status | Notes |
+|------|---------------|--------|-------|
+| Text/Default | `"Jane Doe"` | ✅ Confirmed | Default type, allows any text |
+| String | `"Jane Doe"` | ✅ Confirmed | Explicit text type |
+| Number | `2023` | ✅ Confirmed | Requires `upsertProperty` first (see below) |
+| Date | `"2023-05-15"` | ⚠️ Unknown | Format unclear, validation fails |
+| DateTime | `"2023-05-15T14:30:00"` | ⚠️ Unknown | Format unclear, not yet tested |
+| URL | `"https://..."` | ⚠️ Unknown | Format unclear, not yet tested |
+| Checkbox | `true` or `false` | ⚠️ Unknown | Format unclear, not yet tested |
+| Node | `"Page Name"` | ⚠️ Unknown | Format unclear, not yet tested |
+| Multi-value | `["a", "b", "c"]` | ⚠️ Unknown | Arrays work for text, unclear for other types |
 
 **Property Type Definition with `upsertProperty`** ✅
 
@@ -870,20 +873,22 @@ const page = await logseq.Editor.createPage('Research Paper', {
 - Without type definition: Numbers interpreted as entity references → ERROR
 - With type definition: Logseq knows it's a value, not a reference → SUCCESS
 
-**Complete Workflow**:
+**Complete Workflow** (confirmed working for default/string/number):
 ```typescript
 // Define all property types upfront
 await logseq.Editor.upsertProperty('year', { type: 'number' })
 await logseq.Editor.upsertProperty('author', { type: 'string' })
-await logseq.Editor.upsertProperty('published', { type: 'checkbox' })
+await logseq.Editor.upsertProperty('title', { type: 'default' })
 
 // Now create pages with properly typed properties
 const page = await logseq.Editor.createPage('My Paper', {
-  year: 2025,           // NUMBER
-  author: 'Jane Doe',   // STRING
-  published: true       // CHECKBOX
+  year: 2025,           // NUMBER - ✅ CONFIRMED WORKING
+  author: 'Jane Doe',   // STRING - ✅ CONFIRMED WORKING
+  title: 'My Title'     // DEFAULT - ✅ CONFIRMED WORKING
 })
 ```
+
+**Note**: The above only shows CONFIRMED working property types. For date, datetime, checkbox, url, and node properties, the correct value format is currently unknown (see Known Limitations below).
 
 **Known Limitations** (as of 2025-11-18):
 - ✅ Type definition works for ALL types
@@ -898,19 +903,19 @@ Define property types during plugin initialization, before creating any pages:
 
 ```typescript
 async function main() {
-  // Initialize property types
+  // Initialize property types (only use confirmed working types)
   const propertyTypes = {
-    year: 'number',
-    author: 'string',
-    title: 'string',
-    published: 'checkbox'
+    year: 'number',      // ✅ Confirmed working
+    author: 'string',    // ✅ Confirmed working
+    title: 'default',    // ✅ Confirmed working
+    // Note: date, datetime, checkbox, url, node value formats unknown
   }
 
   for (const [name, type] of Object.entries(propertyTypes)) {
     await logseq.Editor.upsertProperty(name, { type })
   }
 
-  // Now safe to use these properties throughout plugin lifecycle
+  // Now safe to use default/string/number properties throughout plugin lifecycle
 }
 
 logseq.ready(main)
