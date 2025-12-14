@@ -1,70 +1,78 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 1.6.0
-**Updated**: 2025-11-18
+**Version**: 1.7.0
+**Updated**: 2025-12-14
 
 A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**.
 
 ## Overview
 
-This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the latest plugin API features including tag/class management, property handling (with **ALL 8 property types confirmed working - 100% success rate!**), EDN import capabilities, proper Vite bundling setup, and best practices for DB-specific development.
+This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the complete plugin API verified against LSPlugin.ts TypeScript definitions, including tag/class management (with **CORRECTED method names**), property handling (with **complete upsertProperty signature**), icon management, tag inheritance, comprehensive type definitions, and proper Vite bundling setup.
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
 
-## What's New in v1.6.0
+## What's New in v1.7.0
 
-### Property Value Formats - 100% SOLVED! ✅
+### Critical Fixes ⚠️
 
-**COMPLETE BREAKTHROUGH**: All 8 property types now have confirmed working value formats!
+**Method Name Corrections** - BREAKING if you used old names:
+- ✅ **Correct**: `addBlockTag()` and `removeBlockTag()`
+- ❌ **Wrong** (old docs): `addTag()` and `removeTag()`
 
-- ✅ **string**: Plain string values → `"text"`
-- ✅ **number**: Integer/float values → `2025`
-- ✅ **datetime**: Milliseconds timestamp → `Date.now()`
-- ✅ **checkbox**: Boolean values → `true` / `false`
-- ✅ **url**: Plain URL strings → `"https://..."`
-- ✅ **node**: Page name strings → `"Page Name"`
-- ✅ **default**: Plain text → `"text"`
-- ✅ **date**: Journal page entity ID → `journalPage.id` **← NEWLY SOLVED!**
-
-### Date Property Solution 🎉
-
-**The Missing Piece**: Date properties require journal page entity IDs!
-
+**Complete `upsertProperty` Signature**:
 ```typescript
-// 1. Define date property type
-await logseq.Editor.upsertProperty('eventDate', { type: 'date' })
-
-// 2. Create journal page with ISO date format
-const journalPage = await logseq.Editor.createPage('2024-12-25', {}, { redirect: false })
-
-// 3. Use journal page ID as date value
-const event = await logseq.Editor.createPage('Christmas Party', {
-  eventDate: journalPage.id  // ← Entity ID like 298
-})
+await logseq.Editor.upsertProperty(
+  key: string,
+  schema?: {
+    type: 'default' | 'string' | 'number' | 'date' | 'datetime' | 'checkbox' | 'url' | 'node' | 'json',
+    cardinality: 'one' | 'many',  // NEW!
+    hide: boolean,                 // NEW!
+    public: boolean                // NEW!
+  },
+  opts?: { name?: string }        // NEW!
+) => Promise<IEntityID>
 ```
 
-**Key Points**:
-- ✅ Use `journalPage.id` (entity number) - works perfectly, NO warnings
-- ❌ Don't use `journalPage.uuid` or `journalPage.name` - trigger validation warnings
+### New APIs Documented ✨
 
-### Critical Discoveries
+**Icon Management**:
+- `setBlockIcon(blockId, iconType, iconName)` - Set emoji or tabler icons
+- `removeBlockIcon(blockId)` - Remove block icons
 
-1. **Namespaced Property Keys**: Plugin properties stored as `:plugin.property.{plugin-id}/{name}`
-2. **Entity References vs Direct Values**: Some types store entity IDs, others store actual values
-3. **Complete Working Examples**: Full code showing ALL 8 working property types
-4. **Date Properties**: Require journal page entity references (newly discovered!)
+**Tag Inheritance**:
+- `addTagExtends(childTagId, parentTagId)` - Create tag hierarchies
+- `removeTagExtends(childTagId, parentTagId)` - Remove inheritance
+
+**Utility Methods**:
+- `getAllTags()`, `getAllProperties()` - Get all tags/properties
+- `getProperty()`, `removeProperty()` - Manage property entities
+- `getPageProperties()`, `getBlockProperties()` - Get all properties of page/block
+- `renamePage()`, `createJournalPage()`, `getAllPages()` - Page management
+
+### Type Definitions 📘
+
+Complete TypeScript interfaces now documented:
+- `BlockEntity` - Full block structure with all properties
+- `PageEntity` - Complete page structure with journal support
+- `BlockIdentity`, `PageIdentity` - Identity types
+- `IBatchBlock`, `IEntityID`, `IDatom` - Helper types
+
+### New Pitfall
+
+**Pitfall 8: Wrong Tag Method Names** - Explains why `addTag()` throws errors and how to fix it.
 
 ### What's Changed
 
-- **100% success rate**: Updated from 87.5% (7/8) to 100% (8/8)
-- Property types table: Added DATE type with `journalPage.id` format
-- `upsertProperty` examples: Now include all 8 types including date
-- Best practices: Updated to include date property initialization
-- Removed "Known Limitations" section about unsolvable date properties
+- **All APIs verified against LSPlugin.ts** - Official TypeScript definitions
+- **Method naming corrected** - No more "method not found" errors
+- **Complete type information** - Better IDE autocomplete and type safety
+- **Comprehensive utility methods** - All helper methods documented
 
-See [CHANGELOG.md](CHANGELOG.md) for complete v1.6.0 details.
+See [CHANGELOG.md](CHANGELOG.md) for complete v1.7.0 details.
 
 ## Previous Updates
+
+### v1.6.0 - Property Value Formats (100% SOLVED)
 
 ### v1.4.0 - Property Type Definition API
 

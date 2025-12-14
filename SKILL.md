@@ -1,7 +1,7 @@
 ---
 name: logseq-db-plugin-api
-version: 1.6.0
-description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers new API features for tag/class management, property handling (including upsertProperty with ALL 8 property types confirmed working - 100% success rate including DATE properties), EDN import capabilities, and proper Vite bundling setup.
+version: 1.7.0
+description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Use this skill when creating or debugging Logseq plugins that work with DB graphs. Covers complete API reference from LSPlugin.ts including tag/class management (with CORRECTED method names - addBlockTag/removeBlockTag), property handling (complete upsertProperty signature with cardinality, hide, public options), icon management, tag inheritance, comprehensive type definitions, and proper Vite bundling setup.
 ---
 
 # Logseq DB Plugin API Development
@@ -310,6 +310,142 @@ See working example at:
 
 ## Core API Capabilities for DB Graphs
 
+### Type Definitions Reference
+
+Understanding the core types is essential for working with the Logseq plugin API.
+
+#### Block & Page Identity Types
+
+```typescript
+// Block identity - UUID string or object with uuid property
+type BlockIdentity = BlockUUID | Pick<BlockEntity, 'uuid'>
+type BlockUUID = string
+
+// Page identity - page name string or block identity
+type PageIdentity = BlockPageName | BlockIdentity
+type BlockPageName = string
+```
+
+#### BlockEntity Interface
+
+Complete structure of a block in Logseq DB:
+
+```typescript
+interface BlockEntity {
+  // Core identifiers
+  id: number                      // Database entity ID
+  uuid: string                    // Block UUID (permanent identifier)
+
+  // Content
+  content: string                 // DEPRECATED - use title instead
+  title: string                   // Block text content
+  fullTitle: string               // Content with block references resolved to text
+
+  // Relationships
+  parent: { id: number }          // Parent block reference
+  page: { id: number }            // Owner page reference
+  file?: { id: number }           // Associated file reference
+
+  // Properties & metadata
+  properties?: Record<string, any>  // Block properties
+  order: string                     // Fractional ordering string
+  format: 'markdown' | 'org'        // Content format
+  marker?: string                   // Task marker (TODO, DONE, etc.)
+
+  // Timestamps
+  createdAt: number               // Creation timestamp
+  updatedAt: number               // Last update timestamp
+
+  // UI state
+  'collapsed?': boolean           // Collapse state
+  level?: number                  // Indentation level
+
+  // Other optional fields
+  ident?: string                  // For property blocks
+  anchor?: string                 // Anchor link
+  children?: Array<BlockEntity | BlockUUIDTuple>  // Child blocks
+
+  [key: string]: unknown          // Additional dynamic properties
+}
+```
+
+#### PageEntity Interface
+
+Complete structure of a page in Logseq DB:
+
+```typescript
+interface PageEntity {
+  // Core identifiers
+  id: number                      // Database entity ID
+  uuid: string                    // Page UUID (permanent identifier)
+  name: string                    // Page name (lowercase, unique)
+  originalName: string            // Original case-sensitive name
+
+  // Type & classification
+  type: 'page' | 'journal' | 'whiteboard' | 'class' | 'property' | 'hidden'
+  ident?: string                  // Class identifier (e.g., ":logseq.class/Task")
+
+  // Content & format
+  title?: string                  // Display title
+  format: 'markdown' | 'org'      // Content format
+
+  // Properties
+  properties?: Record<string, any>  // Page properties
+
+  // Journal-specific
+  'journal?': boolean             // Is this a journal page?
+  journalDay?: number             // Journal date (YYYYMMDD format)
+
+  // Relationships
+  namespace?: { id: number }      // Parent namespace
+  file?: { id: number }           // Associated file
+  children?: Array<PageEntity>    // Sub-pages (namespaces)
+
+  // Timestamps
+  createdAt: number               // Creation timestamp
+  updatedAt: number               // Last update timestamp
+
+  [key: string]: unknown          // Additional dynamic properties
+}
+```
+
+#### IBatchBlock Interface
+
+Structure for batch block creation:
+
+```typescript
+interface IBatchBlock {
+  content: string                           // Block text content
+  properties?: Record<string, any>          // NOTE: NOT supported in DB graphs!
+  children?: Array<IBatchBlock>             // Nested child blocks
+}
+```
+
+**IMPORTANT**: In DB graphs, properties cannot be set via `IBatchBlock`. Set properties separately after block creation.
+
+#### Entity ID Reference
+
+```typescript
+type EntityID = number                    // Database entity ID
+type IEntityID = { id: EntityID; [key: string]: any }  // Entity reference object
+```
+
+#### Other Common Types
+
+```typescript
+// Block UUID tuple format
+type BlockUUIDTuple = ['uuid', BlockUUID]
+
+// Transaction data (from DB.onChanged)
+type IDatom = [
+  e: number,        // Entity ID
+  a: string,        // Attribute name
+  v: any,           // Value
+  t: number,        // Transaction ID
+  added: boolean    // true if added, false if retracted
+]
+```
+
 ### Page Management
 
 #### createPage - Enhanced for DB Graphs
@@ -359,6 +495,36 @@ const page = await logseq.Editor.createPage('My Page', {
 - `boolean` → Checkbox property
 
 **Empty Properties**: Properties with empty/null values are automatically hidden in DB graphs. No need to conditionally set them.
+
+#### Page Utility Methods
+
+Additional page management methods from LSPlugin.ts:
+
+```typescript
+// Rename a page
+await logseq.Editor.renamePage('Old Page Name', 'New Page Name')
+
+// Create a journal page
+const journalPage = await logseq.Editor.createJournalPage('2024-12-25')
+// Or with Date object
+const journalPage = await logseq.Editor.createJournalPage(new Date())
+
+// Get all pages in the graph
+const allPages = await logseq.Editor.getAllPages()
+// Returns: PageEntity[] | null
+
+// Get all pages with optional repo filter
+const repoPages = await logseq.Editor.getAllPages('my-repo-name')
+
+// Delete a page
+await logseq.Editor.deletePage('Page Name')
+```
+
+**Use Cases**:
+- **renamePage**: Bulk page reorganization, fixing typos, standardizing names
+- **createJournalPage**: Programmatic journal creation for specific dates
+- **getAllPages**: Building page selection UIs, graph analysis, search features
+- **deletePage**: Cleanup operations, removing temporary pages
 
 ### Block Management
 
@@ -460,16 +626,16 @@ const pluginClass = await logseq.Editor.createTag('my-plugin-data', {
 })
 ```
 
-### addTag / removeTag - Tag Association
+### addBlockTag / removeBlockTag - Tag Association
 
 Add or remove tags from blocks (added in commit 51fbc705d).
 
 ```typescript
 // Add tag to a block
-await logseq.Editor.addTag(blockUuid, 'zot')
+await logseq.Editor.addBlockTag(blockUuid, 'zot')
 
 // Remove tag from a block
-await logseq.Editor.removeTag(blockUuid, 'zot')
+await logseq.Editor.removeBlockTag(blockUuid, 'zot')
 
 // Can also add tags during creation
 await logseq.Editor.createPage('Item Name', {
@@ -732,6 +898,138 @@ async function setupZoteroTag() {
 }
 ```
 
+### Block Icons - setBlockIcon / removeBlockIcon
+
+Set or remove icons for blocks (added to TypeScript definitions, available in recent versions).
+
+**Icon Types**:
+- **emoji**: Use emoji names from [emoji-mart](https://learn.missiveapp.com/open/emoji-mart)
+- **tabler-icon**: Use icon names from [Tabler Icons](https://tabler.io/icons)
+
+```typescript
+// Set emoji icon
+await logseq.Editor.setBlockIcon(blockId, 'emoji', 'smile')
+await logseq.Editor.setBlockIcon(blockId, 'emoji', 'star')
+
+// Set tabler icon
+await logseq.Editor.setBlockIcon(blockId, 'tabler-icon', 'calendar')
+await logseq.Editor.setBlockIcon(blockId, 'tabler-icon', 'book')
+
+// Remove block icon
+await logseq.Editor.removeBlockIcon(blockId)
+```
+
+**Use Cases**:
+- Visual categorization of blocks
+- Custom block types (tasks, notes, warnings)
+- Plugin-specific markers
+- Enhanced visual organization
+
+**Example - Set Icon Based on Block Type**:
+```typescript
+async function setIconByType(blockId: string, itemType: string) {
+  const iconMap: Record<string, [string, string]> = {
+    'book': ['tabler-icon', 'book'],
+    'article': ['tabler-icon', 'file-text'],
+    'video': ['emoji', 'movie_camera'],
+    'podcast': ['emoji', 'microphone']
+  }
+
+  const icon = iconMap[itemType]
+  if (icon) {
+    await logseq.Editor.setBlockIcon(blockId, icon[0] as any, icon[1])
+  }
+}
+```
+
+### Tag Inheritance - addTagExtends / removeTagExtends
+
+Create tag hierarchies where child tags inherit properties from parent tags (added to TypeScript definitions).
+
+```typescript
+// Create a parent-child relationship between tags
+await logseq.Editor.addTagExtends(childTagId, parentTagId)
+
+// Example: Create inheritance hierarchy
+const mediaTag = await logseq.Editor.createTag('media')
+const videoTag = await logseq.Editor.createTag('video')
+const movieTag = await logseq.Editor.createTag('movie')
+
+// Set up inheritance: movie extends video extends media
+await logseq.Editor.addTagExtends(videoTag.uuid, mediaTag.uuid)
+await logseq.Editor.addTagExtends(movieTag.uuid, videoTag.uuid)
+
+// Remove inheritance relationship
+await logseq.Editor.removeTagExtends(movieTag.uuid, videoTag.uuid)
+```
+
+**How Inheritance Works**:
+- Child tags inherit all properties defined on parent tags
+- Objects tagged with child tags appear in parent tag queries
+- Allows creating taxonomies and categorization hierarchies
+- Multiple inheritance is supported (tag can extend multiple parents)
+
+**Use Cases**:
+- Content taxonomies (Document → Article → Research Paper)
+- Item categorization (Media → Video → Tutorial)
+- Permission hierarchies
+- Shared property schemas across related tags
+
+**Example - Content Taxonomy**:
+```typescript
+// Create hierarchy: Document → Article → Research Paper → Published Paper
+const docTag = await logseq.Editor.createTag('document')
+const articleTag = await logseq.Editor.createTag('article')
+const researchTag = await logseq.Editor.createTag('research-paper')
+const publishedTag = await logseq.Editor.createTag('published-paper')
+
+await logseq.Editor.addTagExtends(articleTag.uuid, docTag.uuid)
+await logseq.Editor.addTagExtends(researchTag.uuid, articleTag.uuid)
+await logseq.Editor.addTagExtends(publishedTag.uuid, researchTag.uuid)
+
+// Define properties on parent tag
+const parentLogseq = (window as any).parent?.logseq
+await parentLogseq.api.add_tag_property(docTag.uuid, 'title')
+await parentLogseq.api.add_tag_property(docTag.uuid, 'author')
+
+// All child tags automatically inherit these properties!
+```
+
+### Utility Methods - getAllTags / getAllProperties
+
+Retrieve all tags or properties from the graph.
+
+```typescript
+// Get all tags in the graph
+const allTags = await logseq.Editor.getAllTags()
+// Returns: PageEntity[] | null
+
+// Get all properties in the graph
+const allProperties = await logseq.Editor.getAllProperties()
+// Returns: PageEntity[] | null
+
+// Example: List all tag names
+const tags = await logseq.Editor.getAllTags()
+if (tags) {
+  const tagNames = tags.map(tag => tag.name)
+  console.log('Available tags:', tagNames)
+}
+
+// Example: List all property names
+const props = await logseq.Editor.getAllProperties()
+if (props) {
+  const propNames = props.map(prop => prop.name)
+  console.log('Available properties:', propNames)
+}
+```
+
+**Use Cases**:
+- Building tag/property selection UIs
+- Validation (check if tag/property exists before using)
+- Auto-completion features
+- Plugin configuration interfaces
+- Graph analysis and statistics
+
 ---
 
 ## Property Management
@@ -810,6 +1108,57 @@ await logseq.API['db-based-save-block-properties!'](
 - Without `reset-property-values`: `null` values ignored
 - With `reset-property-values: true`: `null` values remove the property
 
+#### Property Utility Methods
+
+Additional property management methods from LSPlugin.ts:
+
+```typescript
+// Get a property entity by key
+const prop = await logseq.Editor.getProperty('propertyName')
+// Returns: BlockEntity | null
+
+// Remove a property entity (deletes the property definition)
+await logseq.Editor.removeProperty('propertyName')
+
+// Get all properties of a specific page
+const pageProps = await logseq.Editor.getPageProperties(pageUuid)
+// Returns: Record<string, any> | null
+
+// Get all properties of a specific block
+const blockProps = await logseq.Editor.getBlockProperties(blockUuid)
+// Returns: Record<string, any> | null
+
+// Get a single property value from a block
+const value = await logseq.Editor.getBlockProperty(blockUuid, 'propertyName')
+// Returns: BlockEntity | unknown
+
+// Remove a property from a block
+await logseq.Editor.removeBlockProperty(blockUuid, 'propertyName')
+```
+
+**Use Cases**:
+- **getProperty**: Check if a property exists before creating/using it
+- **removeProperty**: Clean up unused property definitions
+- **getPageProperties**: Retrieve all properties for validation or display
+- **getBlockProperties**: Access all block metadata
+- **getBlockProperty**: Read specific property value
+- **removeBlockProperty**: Clean up individual property values
+
+**Example - Validate Property Exists**:
+```typescript
+async function ensurePropertyExists(propertyName: string) {
+  const prop = await logseq.Editor.getProperty(propertyName)
+
+  if (!prop) {
+    // Property doesn't exist, create it
+    await logseq.Editor.upsertProperty(propertyName, {
+      type: 'default'
+    })
+    console.log(`Created property: ${propertyName}`)
+  }
+}
+```
+
 ### Property Types & Validation
 
 **Type Inference**:
@@ -837,18 +1186,39 @@ await logseq.API['db-based-save-block-properties!'](
 
 **API Signature**:
 ```typescript
-await logseq.Editor.upsertProperty(propertyName: string, options: { type: string })
+await logseq.Editor.upsertProperty(
+  key: string,
+  schema?: Partial<{
+    type: 'default' | 'string' | 'number' | 'date' | 'datetime' | 'checkbox' | 'url' | 'node' | 'json',
+    cardinality: 'one' | 'many',  // Single value or multi-value
+    hide: boolean,                 // Hide from UI
+    public: boolean                // Public visibility
+  }>,
+  opts?: { name?: string }        // Optional display name
+) => Promise<IEntityID>
 ```
 
+**Parameters**:
+- **key** (string): Property name/key
+- **schema** (optional object):
+  - **type**: Property data type (see below)
+  - **cardinality**: `'one'` for single value, `'many'` for multi-value (default: `'one'`)
+  - **hide**: Hide property from UI (default: `false`)
+  - **public**: Property is public (default: `false`)
+- **opts** (optional object):
+  - **name**: Display name for the property (different from key)
+
+**Return**: `Promise<IEntityID>` - Returns entity reference to the created/updated property
+
 **Valid Property Types**:
-- `'default'` - Default text type
-- `'string'` - String type (explicit text)
-- `'number'` - Number type ✅
-- `'date'` - Date type
-- `'datetime'` - DateTime type
-- `'checkbox'` - Boolean/checkbox type
-- `'url'` - URL type
-- `'node'` - Node/page reference type
+- `'default'` - Default text type (stored as entity reference)
+- `'string'` - Explicit text type (stored as direct value)
+- `'number'` - Number type (stored as entity reference) ✅
+- `'date'` - Date type (journal page reference)
+- `'datetime'` - DateTime type (milliseconds timestamp)
+- `'checkbox'` - Boolean/checkbox type (stored as direct value)
+- `'url'` - URL type (stored as entity reference)
+- `'node'` - Node/page reference type (stored as entity reference)
 - `'json'` - JSON type
 
 **IMPORTANT**: `'text'` is INVALID - use `'default'` or `'string'` instead.
@@ -898,6 +1268,36 @@ const page = await logseq.Editor.createPage('Test Page', {
   myNode: 'Referenced Page Name',                   // ✅ Page name
   myDefault: 'Text content',                        // ✅ Plain text
   myDate: journalPage.id                            // ✅ Date (journal page ID!)
+})
+```
+
+**Advanced `upsertProperty` Usage**:
+
+```typescript
+// Multi-value property (can store arrays)
+await logseq.Editor.upsertProperty('tags', {
+  type: 'default',
+  cardinality: 'many'  // Allows multiple values
+})
+
+// Hidden property (not shown in UI by default)
+await logseq.Editor.upsertProperty('internalId', {
+  type: 'string',
+  hide: true
+})
+
+// Property with custom display name
+await logseq.Editor.upsertProperty('createdAt', {
+  type: 'datetime'
+}, {
+  name: 'Created At'  // Display name shown in UI
+})
+
+// Public multi-value property
+await logseq.Editor.upsertProperty('collaborators', {
+  type: 'node',
+  cardinality: 'many',
+  public: true
 })
 ```
 
@@ -1757,6 +2157,42 @@ const title = page[':plugin.property.my-plugin/title']  // "Actual Title"
 
 **Reference**: See [logseq-tag-schema-poc](https://github.com/kerim/logseq-tag-schema-poc) for detailed examples.
 
+### Pitfall 8: Wrong Tag Method Names
+
+**Problem**: Code using `addTag()` or `removeTag()` throws "method not found" or "function is not defined" errors.
+
+**Example Error**:
+```
+TypeError: logseq.Editor.addTag is not a function
+```
+
+**Cause**: Incorrect method names from outdated documentation or incorrect assumptions.
+
+**Solution**: Use the correct method names from LSPlugin.ts:
+
+```typescript
+// ❌ WRONG - These methods don't exist
+await logseq.Editor.addTag(blockUuid, 'myTag')
+await logseq.Editor.removeTag(blockUuid, 'myTag')
+
+// ✅ CORRECT - Use Block prefix
+await logseq.Editor.addBlockTag(blockUuid, 'myTag')
+await logseq.Editor.removeBlockTag(blockUuid, 'myTag')
+```
+
+**Why This Matters**:
+- The API uses `addBlockTag` and `removeBlockTag` (with "Block" in the name)
+- This distinguishes them from other tag operations like `addTagProperty` or `addTagExtends`
+- Using the wrong name will cause runtime errors that break your plugin
+
+**Quick Fix**:
+If you have existing code using the wrong names, do a find-and-replace:
+- Find: `logseq.Editor.addTag(`
+- Replace: `logseq.Editor.addBlockTag(`
+
+- Find: `logseq.Editor.removeTag(`
+- Replace: `logseq.Editor.removeBlockTag(`
+
 ---
 
 ## Version Compatibility
@@ -1886,10 +2322,19 @@ logseq.Editor.prependBlockInPage(uuid, content)
 logseq.Editor.createTag(name, { uuid })
 logseq.Editor.getTag(nameOrUuidOrIdent)
 logseq.Editor.getTagObjects(nameOrIdent)
+logseq.Editor.getAllTags()
 
-// Associate tags
-logseq.Editor.addTag(blockUuid, tagName)
-logseq.Editor.removeTag(blockUuid, tagName)
+// Associate tags with blocks
+logseq.Editor.addBlockTag(blockUuid, tagName)
+logseq.Editor.removeBlockTag(blockUuid, tagName)
+
+// Tag inheritance
+logseq.Editor.addTagExtends(childTagId, parentTagId)
+logseq.Editor.removeTagExtends(childTagId, parentTagId)
+
+// Block icons
+logseq.Editor.setBlockIcon(blockId, iconType, iconName)
+logseq.Editor.removeBlockIcon(blockId)
 
 // Define tag properties (name-based)
 logseq.API['tag-add-property'](tagName, propName)

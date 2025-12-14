@@ -1,5 +1,63 @@
 # Changelog
 
+## [1.7.0] - 2025-12-14
+
+### Fixed
+- **CRITICAL**: Corrected method names from `addTag`/`removeTag` to `addBlockTag`/`removeBlockTag` throughout documentation
+  - Fixed 4 instances in Tag/Class Management section
+  - Fixed 2 instances in Quick Reference section
+  - Method naming now matches LSPlugin.ts TypeScript definitions
+- **CRITICAL**: Completed `upsertProperty` signature with all parameters
+  - Added `cardinality` option ('one' | 'many') for single vs multi-value properties
+  - Added `hide` option (boolean) for hiding properties from UI
+  - Added `public` option (boolean) for public visibility
+  - Added third parameter `opts` with `name` option for display names
+  - Updated return type to `Promise<IEntityID>` (was incorrectly shown as void)
+  - Added comprehensive parameter documentation
+  - Added advanced usage examples
+
+### Added
+- **Icon Management APIs**: Complete documentation for `setBlockIcon()` and `removeBlockIcon()`
+  - Emoji icon support with emoji-mart reference
+  - Tabler icon support with icon library reference
+  - Use cases and practical examples
+  - Example showing icon mapping by type
+- **Tag Inheritance APIs**: Complete documentation for `addTagExtends()` and `removeTagExtends()`
+  - Create class hierarchies with parent-child relationships
+  - Multiple inheritance support
+  - Comprehensive taxonomy example
+  - Use cases for content categorization
+- **Type Definitions Section**: Comprehensive reference for all core types
+  - `BlockEntity` interface with all properties documented
+  - `PageEntity` interface with all properties documented
+  - `BlockIdentity` and `PageIdentity` types
+  - `IBatchBlock` interface with DB graph limitations noted
+  - `IEntityID` and `EntityID` types
+  - `IDatom` type for transaction data
+- **Utility Methods Documentation**:
+  - Page methods: `getAllTags()`, `getAllProperties()`, `renamePage()`, `createJournalPage()`, `getAllPages()`, `deletePage()`
+  - Property methods: `getProperty()`, `removeProperty()`, `getPageProperties()`, `getBlockProperties()`, `getBlockProperty()`, `removeBlockProperty()`
+  - Complete use cases and examples for each method
+- **Pitfall 8**: Wrong Tag Method Names
+  - Explains the addTag/removeTag error
+  - Shows correct vs incorrect method names
+  - Provides quick find-and-replace fix
+  - Explains why the naming matters
+
+### Changed
+- Updated Quick Reference section with all new methods and corrected names
+- Enhanced property management documentation with complete utility methods
+- Improved page management section with all utility methods
+- Updated skill description to mention corrected method names and complete API coverage
+
+### Documentation
+- All API documentation now verified against LSPlugin.ts TypeScript definitions
+- Added comprehensive type information throughout
+- Improved examples with proper type annotations
+- Enhanced error messages and troubleshooting guidance
+
+---
+
 ## [1.6.0] - 2025-11-18
 
 ### Added
