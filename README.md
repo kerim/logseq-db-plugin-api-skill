@@ -1,9 +1,9 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 1.8.0
+**Version**: 2.0.0
 **Updated**: 2025-12-15
 
-A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**, now with production-tested patterns from real-world plugins.
+A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**, now with modular documentation and production-tested patterns.
 
 ## Overview
 
@@ -11,7 +11,52 @@ This skill provides essential knowledge for building Logseq plugins that work wi
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
 
-## What's New in v1.8.0
+## What's New in v2.0.0
+
+### Major Restructuring: Modular Documentation 📚
+
+**Breaking Change**: SKILL.md is now lean (~420 lines) with detailed content in modular reference files.
+
+**Why This Matters**:
+- **Performance**: Only loads what's needed (SKILL.md loads on trigger, references load as needed)
+- **Maintainability**: Each file has clear scope, easier to update specific topics
+- **Context Efficiency**: Claude only loads relevant documentation for current task
+
+**New Structure**:
+
+```
+logseq-db-plugin-api-skill/
+├── SKILL.md                          # Lean entry point (~420 lines)
+└── references/                       # Modular detailed docs
+    ├── core-apis.md                  # Essential API methods
+    ├── event-handling.md             # DB.onChanged patterns
+    ├── plugin-architecture.md        # Best practices
+    ├── property-management.md        # Property iteration patterns
+    ├── queries-and-database.md       # Datalog query patterns
+    ├── tag-detection.md              # Multi-layered detection
+    └── pitfalls-and-solutions.md     # Common errors & fixes
+```
+
+**How to Use**:
+- SKILL.md provides overview and quick start
+- Each reference file covers specific functionality in detail
+- Claude automatically loads reference files as needed
+- Search patterns provided for finding specific topics
+
+**Benefits**:
+- ✅ 87% reduction in SKILL.md size (3200+ lines → 420 lines)
+- ✅ Faster skill loading - core guidance available immediately
+- ✅ Better organization - find what you need quickly
+- ✅ Easier maintenance - update one file without affecting others
+- ✅ Context-aware loading - only load what's relevant
+
+### Content Preserved from v1.8.0
+
+All content from v1.8.0 has been preserved and reorganized:
+
+## Previous Updates
+
+### v1.8.0 - Event Handling & Architecture Patterns
 
 ### Production Patterns from Real Plugins 🎯
 

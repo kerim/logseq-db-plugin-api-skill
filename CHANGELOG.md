@@ -1,5 +1,91 @@
 # Changelog
 
+## [2.0.0] - 2025-12-15
+
+### 🎯 Major Restructuring: Modular Documentation
+
+**BREAKING CHANGE**: SKILL.md restructured from monolithic file (~3,200 lines) to modular architecture with references/ directory.
+
+This is a **major version bump** because the skill structure has fundamentally changed. While the content is preserved, the way it's organized and loaded is different.
+
+### Added
+
+- **Modular Reference Files** - Created 7 specialized reference files:
+  - `references/event-handling.md` (~270 lines) - DB.onChanged patterns, debouncing strategies
+  - `references/plugin-architecture.md` (~577 lines) - Best practices, file organization, settings
+  - `references/tag-detection.md` (~175 lines) - Multi-layered detection approach
+  - `references/property-management.md` (~227 lines) - Property iteration, namespaced keys
+  - `references/queries-and-database.md` (~160 lines) - Datalog patterns, caching
+  - `references/pitfalls-and-solutions.md` (~220 lines) - Common errors and fixes
+  - `references/core-apis.md` (~200 lines) - Essential API methods quick reference
+
+- **Progressive Disclosure Pattern**
+  - Three-level loading: metadata → SKILL.md → references
+  - Context-efficient documentation loading
+  - Only load relevant content when needed
+
+- **Search Patterns** - Added grep-friendly patterns for finding specific topics
+  - Example: `DB.onChanged`, `debouncing`, `transaction datoms` for event handling
+  - Example: `hasTag`, `block.properties.tags undefined` for tag detection
+
+### Changed
+
+- **SKILL.md** - Complete rewrite as lean hub file
+  - Reduced from 3,200+ lines to ~420 lines (87% reduction)
+  - Now serves as entry point with overview and quick start
+  - References modular files for detailed content
+  - Updated version from 1.8.0 to 2.0.0
+
+- **README.md** - Updated to reflect new structure
+  - Added "Major Restructuring: Modular Documentation" section
+  - Explained benefits and how to use modular structure
+  - Updated version to 2.0.0
+  - Preserved v1.8.0 content in "Previous Updates" section
+
+### Benefits
+
+- ✅ **87% size reduction** - SKILL.md: 3,200+ lines → 420 lines
+- ✅ **Faster loading** - Core guidance available immediately
+- ✅ **Better organization** - Each file has clear scope
+- ✅ **Easier maintenance** - Update one file without affecting others
+- ✅ **Context efficiency** - Claude only loads relevant documentation
+
+### Content Preservation
+
+**IMPORTANT**: All content from v1.8.0 has been preserved and reorganized. Nothing was lost in the restructuring:
+- Event-driven updates → `references/event-handling.md`
+- Multi-layered tag detection → `references/tag-detection.md`
+- Property value iteration → `references/property-management.md`
+- Plugin architecture → `references/plugin-architecture.md`
+- Core APIs → `references/core-apis.md`
+- Queries → `references/queries-and-database.md`
+- Pitfalls → `references/pitfalls-and-solutions.md`
+
+### New Structure
+
+```
+logseq-db-plugin-api-skill/
+├── SKILL.md                          # Lean entry point (~420 lines)
+└── references/                       # Modular detailed docs
+    ├── core-apis.md                  # Essential API methods
+    ├── event-handling.md             # DB.onChanged patterns
+    ├── plugin-architecture.md        # Best practices
+    ├── property-management.md        # Property iteration patterns
+    ├── queries-and-database.md       # Datalog query patterns
+    ├── tag-detection.md              # Multi-layered detection
+    └── pitfalls-and-solutions.md     # Common errors & fixes
+```
+
+### Migration Notes
+
+If you've been using v1.8.0:
+- The skill will continue to work - just update to v2.0.0
+- All content is still available, just organized differently
+- SKILL.md now provides overview and references detailed files
+- Claude automatically loads reference files as needed
+
+---
+
 ## [1.8.0] - 2025-12-15
 
 ### Added
