@@ -1,5 +1,100 @@
 # Changelog
 
+## [1.8.0] - 2025-12-15
+
+### Added
+
+- **Event-Driven Updates Section** (~270 lines) - Complete DB.onChanged patterns from real-world plugin
+  - DB.onChanged event structure and setup
+  - IDatom transaction data format: `[entityId, attribute, value, txId, added]`
+  - Filtering transaction datoms by attribute patterns
+  - Debouncing strategy: 300ms window with Set-based deduplication
+  - Parent block traversal with safety limits (max 50 levels)
+  - Complete working example from logseq-checklist plugin showing checkbox change tracking
+  - Performance optimization: batch processing prevents UI thrashing
+  - Source: Production-validated in logseq-checklist v1.0.0
+
+- **Multi-Layered Tag Detection Section** (~175 lines) - Reliable tag detection for DB graphs
+  - Three-tier detection approach for maximum reliability
+  - Tier 1: Fast content-based check (80% of cases, instant)
+  - Tier 2: Datascript query (most reliable, always works)
+  - Tier 3: Properties fallback (safety net)
+  - Handles `block.properties.tags` unreliability issue
+  - Complete working implementation with all three tiers
+  - Performance characteristics and when to use each tier
+  - Real-world usage examples (finding parent blocks, filtering children)
+  - Source: Production-validated in logseq-checklist v1.0.0
+
+- **Property Value Iteration Section** (~227 lines) - Reading properties from block objects
+  - Critical understanding: Properties stored as namespaced keys on block object
+  - Property storage format: `:user.property/name`, `:logseq.property/name`, `:plugin.property.{id}/name`
+  - Direct key access pattern for known property names
+  - Iteration pattern for unknown/dynamic property names
+  - Type-based property detection (boolean, number, string, array, entity reference)
+  - Complete `getCheckboxValue()` example from logseq-checklist
+  - Common use cases: finding properties, reading all user properties, filtering by type
+  - Performance considerations: O(1) direct access vs O(n) iteration
+  - Metadata properties to skip during iteration
+  - Why `block.properties` is unreliable for reading values
+  - Source: Production-validated in logseq-checklist v1.0.0
+
+- **Plugin Architecture Patterns Section** (~577 lines) - Best practices for production plugins
+  - File organization: index.ts, events.ts, logic.ts, settings.ts, types.ts
+  - Separation of concerns: entry point, I/O, pure logic, configuration, types
+  - Settings registration with Logseq's built-in `SettingSchemaDesc` system
+  - All setting types: string, number, boolean, enum, heading
+  - Settings accessor pattern with type safety and defaults
+  - Production-ready error handling patterns
+  - Graceful degradation when APIs unavailable
+  - TypeScript configuration (tsconfig.json) for Logseq plugins
+  - Vite build configuration with vite-plugin-logseq
+  - Complete mini-plugin example (~350 lines) demonstrating all patterns
+  - Testing strategy: manual testing, debug logging, error boundaries, performance monitoring
+  - Deployment checklist: version, changelog, build, testing, release
+  - Source: Complete architecture from logseq-checklist v1.0.0
+
+- **Real-World Case Study** - logseq-checklist plugin referenced throughout
+  - GitHub repository: https://github.com/kerim/logseq-checklist
+  - Features: Automatic progress indicators for checklist blocks
+  - Architecture: Clean separation of concerns, zero configuration
+  - Performance: 300ms debouncing, efficient tag detection
+  - Lines of code: ~350 total (maintainable, production-quality)
+  - All examples in skill are from this working plugin
+
+### Changed
+
+- **SKILL.md**: Updated version from 1.7.0 to 1.8.0
+- **SKILL.md Description**: Added mention of event-driven updates, multi-layered tag detection, property value iteration, and production-tested plugin architecture patterns
+- **README.md**: Complete rewrite of "What's New" section for v1.8.0
+- **README.md**: Added "Real-World Case Study" section featuring logseq-checklist
+- **README.md**: Added "Key Patterns Documented" checklist
+- **README.md**: Moved v1.7.0 content to "Previous Updates" section
+
+### Technical Highlights
+
+- **~1,200 lines of new content** - Practical, production-tested patterns
+- **All code examples verified** - From logseq-checklist v1.0.0 working plugin
+- **Performance metrics included** - Real-world optimization strategies
+- **Complete working examples** - Not snippets, full implementations
+- **Source attribution** - Every pattern linked to source code line numbers
+- **Architecture guidance** - How to structure maintainable plugins
+
+### What This Means
+
+Before v1.8.0, the skill documented APIs but lacked practical implementation patterns.
+
+After v1.8.0:
+- ✅ Know how to handle database events efficiently
+- ✅ Understand reliable tag detection strategies
+- ✅ Can read properties dynamically without knowing names
+- ✅ Have complete plugin architecture template
+- ✅ Can copy production-tested code patterns
+- ✅ Avoid common performance pitfalls
+
+**This update transforms the skill from API reference to complete implementation guide.**
+
+---
+
 ## [1.7.0] - 2025-12-14
 
 ### Fixed

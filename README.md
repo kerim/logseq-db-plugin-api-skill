@@ -1,9 +1,9 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 1.7.0
-**Updated**: 2025-12-14
+**Version**: 1.8.0
+**Updated**: 2025-12-15
 
-A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**.
+A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**, now with production-tested patterns from real-world plugins.
 
 ## Overview
 
@@ -11,66 +11,76 @@ This skill provides essential knowledge for building Logseq plugins that work wi
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
 
-## What's New in v1.7.0
+## What's New in v1.8.0
 
-### Critical Fixes ⚠️
+### Production Patterns from Real Plugins 🎯
 
-**Method Name Corrections** - BREAKING if you used old names:
-- ✅ **Correct**: `addBlockTag()` and `removeBlockTag()`
-- ❌ **Wrong** (old docs): `addTag()` and `removeTag()`
+This update adds **practical, battle-tested patterns** discovered while building the [logseq-checklist](https://github.com/kerim/logseq-checklist) plugin (v1.0.0). All examples are production-validated code from a working plugin.
 
-**Complete `upsertProperty` Signature**:
-```typescript
-await logseq.Editor.upsertProperty(
-  key: string,
-  schema?: {
-    type: 'default' | 'string' | 'number' | 'date' | 'datetime' | 'checkbox' | 'url' | 'node' | 'json',
-    cardinality: 'one' | 'many',  // NEW!
-    hide: boolean,                 // NEW!
-    public: boolean                // NEW!
-  },
-  opts?: { name?: string }        // NEW!
-) => Promise<IEntityID>
-```
+### New Sections Added ✨
 
-### New APIs Documented ✨
+**1. Event-Driven Updates with DB.onChanged**:
+- Complete event structure and datom filtering
+- Debouncing strategies (300ms pattern with Set-based deduplication)
+- Real-world example: automatic checkbox change detection
+- Performance optimization for UI responsiveness
 
-**Icon Management**:
-- `setBlockIcon(blockId, iconType, iconName)` - Set emoji or tabler icons
-- `removeBlockIcon(blockId)` - Remove block icons
+**2. Multi-Layered Tag Detection**:
+- Three-tier detection approach for reliability
+- Content check → datascript query → properties fallback
+- Handles `block.properties.tags` unreliability
+- 80% fast path, 100% reliable fallback
 
-**Tag Inheritance**:
-- `addTagExtends(childTagId, parentTagId)` - Create tag hierarchies
-- `removeTagExtends(childTagId, parentTagId)` - Remove inheritance
+**3. Property Value Iteration**:
+- Reading property values from block objects via namespaced keys
+- Iteration patterns for unknown property names
+- Type-based property detection (boolean, number, string)
+- Direct key access vs iteration performance trade-offs
 
-**Utility Methods**:
-- `getAllTags()`, `getAllProperties()` - Get all tags/properties
-- `getProperty()`, `removeProperty()` - Manage property entities
-- `getPageProperties()`, `getBlockProperties()` - Get all properties of page/block
-- `renamePage()`, `createJournalPage()`, `getAllPages()` - Page management
+**4. Plugin Architecture Best Practices**:
+- File organization patterns (index.ts, events.ts, logic.ts, settings.ts, types.ts)
+- Settings registration with Logseq's schema system
+- Production-ready error handling and graceful degradation
+- Complete mini-plugin example (~350 lines)
+- TypeScript and Vite configuration
+- Testing strategy and deployment checklist
 
-### Type Definitions 📘
+### Real-World Case Study 📚
 
-Complete TypeScript interfaces now documented:
-- `BlockEntity` - Full block structure with all properties
-- `PageEntity` - Complete page structure with journal support
-- `BlockIdentity`, `PageIdentity` - Identity types
-- `IBatchBlock`, `IEntityID`, `IDatom` - Helper types
+**logseq-checklist plugin** referenced throughout as working example:
+- GitHub: [https://github.com/kerim/logseq-checklist](https://github.com/kerim/logseq-checklist)
+- Features: Automatic progress indicators for checklist blocks
+- Architecture: Clean separation of concerns, zero configuration
+- Lines of code: ~350 (maintainable, production-quality)
 
-### New Pitfall
+### Key Patterns Documented
 
-**Pitfall 8: Wrong Tag Method Names** - Explains why `addTag()` throws errors and how to fix it.
+✅ **Debouncing updates**: 300ms delay with Set-based deduplication
+✅ **Multi-strategy tag detection**: Fast path + reliable fallback
+✅ **Property iteration**: Finding values without knowing exact names
+✅ **Error handling**: Try/catch with user-friendly messages
+✅ **Settings system**: Type-safe configuration with defaults
 
 ### What's Changed
 
-- **All APIs verified against LSPlugin.ts** - Official TypeScript definitions
-- **Method naming corrected** - No more "method not found" errors
-- **Complete type information** - Better IDE autocomplete and type safety
-- **Comprehensive utility methods** - All helper methods documented
+- **~1,200 lines of new content** - Practical patterns and complete examples
+- **All code production-tested** - From logseq-checklist v1.0.0
+- **Performance metrics included** - Real-world optimization strategies
+- **Architecture guidance** - How to structure maintainable plugins
 
-See [CHANGELOG.md](CHANGELOG.md) for complete v1.7.0 details.
+See [CHANGELOG.md](CHANGELOG.md) for complete v1.8.0 details.
 
 ## Previous Updates
+
+### v1.7.0 - API Corrections & New Methods
+
+**Critical Fixes**:
+- Method name corrections: `addBlockTag()` and `removeBlockTag()` (not `addTag()`/`removeTag()`)
+- Complete `upsertProperty` signature with cardinality, hide, public options
+
+**New APIs**: Icon management (`setBlockIcon`, `removeBlockIcon`), tag inheritance (`addTagExtends`, `removeTagExtends`), utility methods (`getAllTags`, `getAllProperties`, etc.)
+
+**Type Definitions**: Complete `BlockEntity`, `PageEntity`, `IDatom` interfaces
 
 ### v1.6.0 - Property Value Formats (100% SOLVED)
 
