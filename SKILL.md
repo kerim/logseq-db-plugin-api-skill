@@ -1,7 +1,7 @@
 ---
 name: logseq-db-plugin-api
-version: 2.0.0
-description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Covers core APIs, event-driven updates with DB.onChanged, multi-layered tag detection, property value iteration, and production-tested plugin architecture patterns. References production-validated code from logseq-checklist v1.0.0.
+version: 2.1.0
+description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Covers core APIs, event-driven updates with DB.onChanged, multi-layered tag detection, property value iteration, advanced query patterns (tag inheritance, or-join), and production-tested plugin architecture patterns. References production-validated code from logseq-checklist v1.0.0.
 ---
 
 # Logseq DB Plugin API Skill
@@ -81,9 +81,9 @@ Tag/class management, page/block creation, property operations, icons, utilities
 **Search for**: `createTag`, `addBlockTag`, `upsertProperty`, `createPage`
 
 **[Queries and Database](./references/queries-and-database.md)** - Datalog patterns
-Query syntax, common patterns, caching strategies, get-class-objects.
+Query syntax, common patterns, caching strategies, tag inheritance with or-join, :block/title vs :block/name.
 
-**Search for**: `datascriptQuery`, `datalog`, `caching`, `query patterns`
+**Search for**: `datascriptQuery`, `datalog`, `caching`, `query patterns`, `or-join`, `tag inheritance`, `:logseq.property.class/extends`
 
 ### Troubleshooting
 
@@ -309,7 +309,26 @@ const query = `
 `
 ```
 
-See [references/queries-and-database.md](./references/queries-and-database.md) for advanced patterns.
+**Querying Tag Hierarchies**:
+
+```typescript
+// Find items with #task OR any tag that extends #task (e.g., #shopping, #feedback)
+const query = `
+{:query [:find (pull ?b [*])
+         :where
+         (or-join [?b]
+           (and [?b :block/tags ?t]
+                [?t :block/title "task"])
+           (and [?b :block/tags ?child]
+                [?child :logseq.property.class/extends ?parent]
+                [?parent :block/title "task"]))]}
+`
+
+const results = await logseq.DB.datascriptQuery(query)
+const allTasks = results.map(r => r[0])
+```
+
+See [references/queries-and-database.md](./references/queries-and-database.md) for advanced patterns including tag inheritance, or-join usage, and query context differences.
 
 ### Responding to Database Changes
 

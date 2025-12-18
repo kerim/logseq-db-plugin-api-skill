@@ -1,7 +1,7 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 2.0.0
-**Updated**: 2025-12-15
+**Version**: 2.1.0
+**Updated**: 2025-12-18
 
 A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**, now with modular documentation and production-tested patterns.
 
@@ -10,6 +10,60 @@ A comprehensive Claude Code skill for developing Logseq plugins specifically for
 This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the complete plugin API verified against LSPlugin.ts TypeScript definitions, including tag/class management (with **CORRECTED method names**), property handling (with **complete upsertProperty signature**), icon management, tag inheritance, comprehensive type definitions, and proper Vite bundling setup.
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
+
+## What's New in v2.1.0
+
+### Advanced Query Patterns 🔍
+
+This update adds production-tested patterns for **complex Datalog queries**, including tag inheritance and disjunctive query patterns discovered through real-world plugin development.
+
+**New Query Capabilities**:
+
+1. **Tag Inheritance Queries** - Query items tagged with parent tags OR any child tags that extend them
+   - Use `:logseq.property.class/extends` to traverse tag hierarchies
+   - Find all tasks including #shopping, #feedback, etc. that extend #task
+   - Production-tested `or-join` pattern for reliable results
+
+2. **Disjunctive Queries with or-join** - Combine query branches with different variables
+   - Solve "All clauses in 'or' must use same set of free vars" errors
+   - Understand when to use `or-join [?vars]` vs standard `or`
+   - Complete explanation with error examples and fixes
+
+3. **:block/title vs :block/name** - Clear documentation of tag attribute differences
+   - `:block/title` = Display name (case-sensitive, "Task")
+   - `:block/name` = Normalized name (lowercase, "task")
+   - When to use each in queries (app vs CLI contexts)
+
+4. **Query Context Guide** - Same Datalog works across different contexts
+   - Plugin API: `logseq.DB.datascriptQuery(query)`
+   - App query blocks: Direct Datalog syntax
+   - CLI: `logseq query` command patterns
+
+**Documentation Updates**:
+- **queries-and-database.md**: New "Advanced Query Patterns" section (~140 lines)
+- **core-apis.md**: Tag hierarchy creation examples with cross-references
+- **pitfalls-and-solutions.md**: Pitfall #9 about `or-join` variable mismatch
+- **SKILL.md**: Updated search patterns and inheritance query examples
+
+**Real-World Use Case**: Query all tasks of status "Todo" with any priority, including items tagged with tags that extend #task:
+
+```clojure
+{:query [:find (pull ?b [*])
+         :where
+         (or-join [?b]
+           ;; Direct #task tags
+           (and [?b :block/tags ?t]
+                [?t :block/title "Task"])
+           ;; Tags extending #task
+           (and [?b :block/tags ?child]
+                [?child :logseq.property.class/extends ?parent]
+                [?parent :block/title "Task"]))
+         [?b :logseq.property/status ?s]
+         [?s :block/title "Todo"]
+         [?b :logseq.property/priority ?p]]}
+```
+
+This pattern is essential for plugins that work with tag hierarchies and need to query derived relationships.
 
 ## What's New in v2.0.0
 

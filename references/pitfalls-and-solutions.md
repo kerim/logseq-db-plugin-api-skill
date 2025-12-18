@@ -215,3 +215,58 @@ If you have existing code using the wrong names, do a find-and-replace:
 
 - Find: `logseq.Editor.removeTag(`
 - Replace: `logseq.Editor.removeBlockTag(`
+
+## Pitfall 9: or Clause Variable Mismatch
+
+**Problem**: Query fails with error: "All clauses in 'or' must use same set of free vars"
+
+**Cause**: Using `or` with branches that have different free variables.
+
+**Error Example**:
+
+```clojure
+;; ❌ WRONG - This query fails
+{:query [:find (pull ?b [*])
+         :where
+         (or
+           (and [?b :block/tags ?t]
+                [?t :block/title "task"])
+           (and [?b :block/tags ?child]
+                [?child :logseq.property.class/extends ?parent]
+                [?parent :block/title "task"]))]}
+
+;; Error: All clauses in 'or' must use same set of free vars,
+;; had [#{?b ?t} #{?b ?child ?parent}]
+```
+
+**Why This Fails**:
+- First branch uses variables: `?b`, `?t`
+- Second branch uses variables: `?b`, `?child`, `?parent`
+- Standard `or` requires ALL variables to match across branches
+
+**Solution**: Use `or-join` to explicitly declare which variables must unify:
+
+```clojure
+;; ✅ CORRECT - Using or-join
+{:query [:find (pull ?b [*])
+         :where
+         (or-join [?b]  ;; Only ?b must match across branches
+           (and [?b :block/tags ?t]
+                [?t :block/title "task"])
+           (and [?b :block/tags ?child]
+                [?child :logseq.property.class/extends ?parent]
+                [?parent :block/title "task"]))]}
+```
+
+**How or-join Works**:
+- `(or-join [?b] ...)` means "only `?b` must be the same across all branches"
+- Each branch can have its own additional variables
+- The final result only includes entities where `?b` matches
+
+**Common Use Case - Tag Inheritance**:
+
+This pattern is essential for querying tag hierarchies where you want blocks tagged with either:
+1. The parent tag directly, OR
+2. Any child tag that extends the parent
+
+See [queries-and-database.md](./queries-and-database.md#tag-inheritance-with-or-join) for complete tag inheritance query patterns.

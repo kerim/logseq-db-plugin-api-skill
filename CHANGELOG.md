@@ -1,5 +1,118 @@
 # Changelog
 
+## [2.1.0] - 2025-12-18
+
+### Added
+
+- **Tag Inheritance Query Patterns** - Production-tested patterns for querying tag hierarchies
+  - Complete documentation of `:logseq.property.class/extends` attribute for tag parent relationships
+  - Working `or-join` pattern for finding items with parent tag OR any child tags
+  - Real-world example: Query all #task items including #shopping, #feedback, etc. that extend #task
+  - Use case: Essential for plugins working with tag taxonomies and derived relationships
+  - Location: `references/queries-and-database.md` (~140 new lines)
+
+- **Disjunctive Query Patterns with or-join** - Solve "free vars" errors in complex queries
+  - Comprehensive explanation of when `or-join [?vars]` is required vs. standard `or`
+  - Error example showing "All clauses in 'or' must use same set of free vars" issue
+  - Solution pattern with explicit variable unification
+  - Multiple working examples combining tag inheritance with property filters
+  - Location: `references/queries-and-database.md` and `references/pitfalls-and-solutions.md` (Pitfall #9)
+
+- **:block/title vs :block/name Documentation** - Clear explanation of tag attribute differences
+  - Table comparing both attributes: display name vs. normalized name
+  - When to use each: `:block/title` (case-sensitive, "Task") vs. `:block/name` (lowercase, "task")
+  - Context-specific recommendations: Plugin queries vs. app query blocks vs. CLI
+  - Best practice: Use `:block/title` throughout for consistency with user-visible names
+  - Location: `references/queries-and-database.md`
+
+- **Query Context Guide** - Same Datalog syntax across different execution contexts
+  - Plugin API: `logseq.DB.datascriptQuery(query)`
+  - App query blocks: Direct Datalog in `{:query [...]}`
+  - CLI: `logseq query` command with escaped syntax
+  - Key differences documented: string wrapping, format requirements, execution environment
+  - Location: `references/queries-and-database.md`
+
+- **Tag Hierarchy Creation Example** - Practical example in core APIs
+  - Step-by-step code showing how to create parent-child tag relationships
+  - Uses `addTagExtends()` API to establish inheritance
+  - Cross-reference to query patterns in queries-and-database.md
+  - Location: `references/core-apis.md`
+
+- **Pitfall #9: or Clause Variable Mismatch** - Common query error and solution
+  - Problem: "All clauses in 'or' must use same set of free vars" error message
+  - Cause: Using standard `or` with branches that have different variables
+  - ❌ WRONG example showing the error
+  - ✅ CORRECT solution using `or-join [?b]`
+  - How or-join works: Explicitly declare which variables must unify
+  - Cross-reference to complete query patterns
+  - Location: `references/pitfalls-and-solutions.md`
+
+### Changed
+
+- **SKILL.md** - Updated version and enhanced query documentation
+  - Version bumped from 2.0.0 to 2.1.0
+  - Description updated to mention advanced query patterns
+  - Added search patterns for new content: `or-join`, `tag inheritance`, `:logseq.property.class/extends`
+  - Added tag inheritance query example to Essential Workflows section
+  - Updated Queries reference section with new capabilities
+
+- **README.md** - New release announcement and version update
+  - Version updated from 2.0.0 to 2.1.0
+  - Date updated from 2025-12-15 to 2025-12-18
+  - Added "What's New in v2.1.0" section with Advanced Query Patterns announcement
+  - Comprehensive documentation of new query capabilities
+  - Real-world use case example with complete or-join query
+  - Highlights production-tested nature of patterns
+
+- **queries-and-database.md** - Major expansion with advanced patterns
+  - Added "Advanced Query Patterns" section (~140 new lines)
+  - Subsection: Tag Inheritance with or-join (complete patterns and explanations)
+  - Subsection: :block/title vs :block/name (table and usage guide)
+  - Subsection: Query Context (plugin/app/CLI comparison)
+  - All examples tested via CLI and verified in app
+  - Production-validated patterns from real-world testing
+
+- **core-apis.md** - Enhanced tag inheritance documentation
+  - Added practical tag hierarchy creation example (~20 new lines)
+  - Shows complete workflow: create tags → establish relationships
+  - Cross-reference to query patterns in queries-and-database.md
+  - Clarifies how to use `addTagExtends()` in practice
+
+- **pitfalls-and-solutions.md** - New common error documented
+  - Added Pitfall #9: or Clause Variable Mismatch (~55 new lines)
+  - Complete error example with actual error message
+  - Side-by-side wrong vs. correct comparison
+  - Explanation of how or-join solves the problem
+  - Cross-reference to queries-and-database.md for complete patterns
+
+### Technical Highlights
+
+- **~287 lines of new content** - Focused on advanced query patterns
+- **Production-tested patterns** - All queries verified via CLI and in-app testing
+- **Real-world use case** - Derived from actual plugin development scenarios
+- **Complete error coverage** - Common mistakes documented with solutions
+- **Cross-referenced documentation** - Each file references related content
+- **Datalog syntax verified** - All queries tested for correctness
+
+### What This Means
+
+Before v2.1.0, the skill documented basic Datalog queries but lacked patterns for:
+- Querying tag hierarchies (items tagged with child tags)
+- Combining query branches with different variables
+- Understanding tag attribute differences
+
+After v2.1.0:
+- ✅ Query items with parent tags OR any child tags that extend them
+- ✅ Write complex disjunctive queries without "free vars" errors
+- ✅ Understand when to use :block/title vs. :block/name
+- ✅ Know how queries work across different contexts (plugin/app/CLI)
+- ✅ Avoid common or-join pitfalls with documented solutions
+- ✅ Create and query tag taxonomies confidently
+
+**This update elevates the skill from basic queries to advanced tag taxonomy patterns.**
+
+---
+
 ## [2.0.0] - 2025-12-15
 
 ### 🎯 Major Restructuring: Modular Documentation

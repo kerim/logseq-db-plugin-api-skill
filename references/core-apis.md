@@ -172,6 +172,28 @@ await logseq.Editor.addTagExtends(childTagId, parentTagId)
 await logseq.Editor.removeTagExtends(childTagId, parentTagId)
 ```
 
+**Example - Creating tag hierarchy**:
+
+```typescript
+// Create parent tag (Task)
+const taskTag = await logseq.Editor.createTag('Task')
+
+// Create child tags that extend Task
+const shoppingTag = await logseq.Editor.createTag('shopping')
+const feedbackTag = await logseq.Editor.createTag('feedback')
+
+// Establish parent-child relationships
+await logseq.Editor.addTagExtends(shoppingTag.id, taskTag.id)
+await logseq.Editor.addTagExtends(feedbackTag.id, taskTag.id)
+
+// Now items tagged with #shopping or #feedback are also considered tasks
+// See queries-and-database.md for how to query tag hierarchies
+```
+
+**Querying Tag Hierarchies**:
+
+See [queries-and-database.md](./queries-and-database.md#tag-inheritance-with-or-join) for how to find items tagged with parent OR child tags using `or-join`.
+
 ## Utility Methods
 
 ```typescript
