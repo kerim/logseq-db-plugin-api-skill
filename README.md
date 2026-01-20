@@ -280,34 +280,20 @@ This skill documents the latest Logseq plugin API features added in recent commi
 
 ## Installation
 
-### For Claude Code Users
+### For Claude Code
 
-1. **Clone or download this repository:**
+1. Clone or download this repository
+2. Copy the `skill/` folder to your Claude Code skills directory:
    ```bash
-   cd ~/Documents/Code
-   git clone https://github.com/kerim/logseq-db-plugin-api-skill.git
+   cp -r skill ~/.claude/skills/logseq-db-plugin-api-skill
    ```
+3. Restart Claude Code to load the skill
 
-2. **Install to Claude Code skills directory:**
-   ```bash
-   cp -r logseq-db-plugin-api-skill ~/.claude/skills/
-   ```
+### Alternative: Direct Download
 
-3. **Restart Claude Code** to load the skill.
-
-4. **Verify installation:**
-   ```bash
-   claude --list-skills | grep logseq-db-plugin-api
-   ```
-
-### Manual Installation
-
-Copy the `SKILL.md` file to your Claude Code skills directory:
-
-```bash
-mkdir -p ~/.claude/skills/logseq-db-plugin-api
-cp SKILL.md ~/.claude/skills/logseq-db-plugin-api/
-```
+1. Download just the `skill/` folder from this repository
+2. Rename it to `logseq-db-plugin-api-skill` and place it at `~/.claude/skills/logseq-db-plugin-api-skill/`
+3. Restart Claude Code
 
 ## Usage
 
