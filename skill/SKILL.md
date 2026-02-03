@@ -1,7 +1,8 @@
 ---
 name: logseq-db-plugin-api
 version: 2.1.0
-description: Essential knowledge for developing Logseq plugins for DB (database) graphs. Covers core APIs, event-driven updates with DB.onChanged, multi-layered tag detection, property value iteration, advanced query patterns (tag inheritance, or-join), and production-tested plugin architecture patterns. References production-validated code from logseq-checklist v1.0.0.
+description: Build Logseq DB graph plugins: core APIs, DB.onChanged events, tag detection, property iteration, Datalog queries with tag inheritance, production-tested patterns from logseq-checklist v1.0.0.
+dependencies: Logseq>=0.11.0, @logseq/libs>=0.3.0, Node.js>=18, vite, vite-plugin-logseq
 ---
 
 # Logseq DB Plugin API Skill
