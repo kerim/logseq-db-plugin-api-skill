@@ -38,7 +38,7 @@ mkdir -p "$TARGET_DIR"
 if [[ ! -d "$UPSTREAM_DIR/.git" ]]; then
     echo "==> First run: shallow+sparse clone of $UPSTREAM_URL"
     mkdir -p upstream
-    git clone --depth 1 --filter=blob:none --no-checkout "$UPSTREAM_URL" "$UPSTREAM_DIR"
+    git clone --depth 1 --filter=blob:none --no-checkout --branch master "$UPSTREAM_URL" "$UPSTREAM_DIR"
     git -C "$UPSTREAM_DIR" sparse-checkout init --cone
     git -C "$UPSTREAM_DIR" sparse-checkout set "$UPSTREAM_PATH"
     git -C "$UPSTREAM_DIR" checkout
@@ -54,7 +54,7 @@ if [[ -f "$SHA_FILE" ]] && [[ "$(cat "$SHA_FILE")" == "$UPSTREAM_SHA" ]]; then
     exit 0
 fi
 
-echo "==> Verifying all $([[ ${#EXPECTED_FILES[@]} -gt 0 ]] && echo ${#EXPECTED_FILES[@]}) expected files exist upstream"
+echo "==> Verifying ${#EXPECTED_FILES[@]} expected files exist upstream"
 for f in "${EXPECTED_FILES[@]}"; do
     if [[ ! -f "$UPSTREAM_DIR/$UPSTREAM_PATH/$f" ]]; then
         echo "ERROR: expected file missing upstream: $UPSTREAM_PATH/$f" >&2
@@ -77,7 +77,6 @@ for f in "${EXPECTED_FILES[@]}"; do
     if [[ -n "$(tail -c 1 "$TMP")" ]]; then
         printf '\n' >> "$TMP"
     fi
-    # Append 3-line footer: blank line + 2 HTML comments
     printf '\n<!-- logseq-mirror: commit=%s fetched=%s -->\n<!-- logseq-mirror: upstream=https://github.com/logseq/logseq/blob/%s/%s/%s -->\n' \
         "$UPSTREAM_SHA" "$FETCHED_AT" "$UPSTREAM_SHA" "$UPSTREAM_PATH" "$f" >> "$TMP"
     mv "$TMP" "$DST"

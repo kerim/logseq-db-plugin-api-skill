@@ -567,12 +567,7 @@ Contributions are welcome! If you discover new API features, better patterns, or
 
 ## License
 
-**Mixed-license repository**:
-
-- **MIT License** covers the skill's original content (root `LICENSE`): `SKILL.md`, most of `skill/references/`, `scripts/`, root documentation.
-- **AGPL-3.0** covers mirrored upstream content under `skill/references/logseq-official/` (see `skill/references/logseq-official/LICENSE`). These files are reproduced verbatim from [logseq/logseq](https://github.com/logseq/logseq) with attribution footers.
-
-Redistributing modifications to files under `skill/references/logseq-official/` requires AGPL-3.0 compliance. All other content is MIT — feel free to use, modify, and distribute.
+Mixed-license: **MIT** for the skill's original content (root `LICENSE`); **AGPL-3.0** for mirrored upstream content under `skill/references/logseq-official/` (`skill/references/logseq-official/LICENSE`). See the [Mirrored Upstream Docs → License boundary](#license-boundary) section above for the exact scope and redistribution terms.
 
 ## Support
 

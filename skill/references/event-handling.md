@@ -1,6 +1,6 @@
 # Event-Driven Updates with DB.onChanged
 
-> **See also**: no directly corresponding file in [`logseq-official/`](./logseq-official/) — this is supplementary content documenting production patterns for `DB.onChanged`, datom filtering, and debouncing. Layer 1's [`AGENTS.md`](./logseq-official/AGENTS.md) touches on the SDK but does not cover event-driven patterns in depth.
+> **See also (Layer 1)**: no directly corresponding file. This file is supplementary — it documents `DB.onChanged`, datom filtering, and debouncing patterns not covered upstream. Layer 1's [`AGENTS.md`](./logseq-official/AGENTS.md) touches the SDK but not event-driven patterns.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Property Value Iteration Patterns
 
-> **See also** (authoritative upstream): [`logseq-official/db_properties_guide.md`](./logseq-official/db_properties_guide.md) for the canonical explanation of file graph vs DB graph property storage, and [`logseq-official/db_properties_skill.md`](./logseq-official/db_properties_skill.md) for the properties SDK reference. This file documents the production-discovered unreliability of `block.properties[name]` and shows iteration patterns over `:user.property/*` namespaced keys — a gotcha not covered by Layer 1.
+> **See also (Layer 1)**: [`logseq-official/db_properties_guide.md`](./logseq-official/db_properties_guide.md) (file vs DB graph property storage) and [`logseq-official/db_properties_skill.md`](./logseq-official/db_properties_skill.md) (properties SDK reference). This file adds the production-discovered `block.properties[name]` unreliability and iteration patterns over `:user.property/*` namespaced keys.
 
 ## Critical Understanding
 

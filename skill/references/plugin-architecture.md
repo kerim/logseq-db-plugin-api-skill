@@ -1,6 +1,6 @@
 # Plugin Architecture Patterns
 
-> **See also** (authoritative upstream): [`logseq-official/starter_guide.md`](./logseq-official/starter_guide.md) for the canonical plugin bootstrap and [`logseq-official/AGENTS.md`](./logseq-official/AGENTS.md) for the SDK repo structure. This file captures production-tested file organization patterns (index.ts / events.ts / logic.ts / settings.ts split) derived from logseq-checklist v1.0.0 — supplementary to Layer 1's bootstrap docs.
+> **See also (Layer 1)**: [`logseq-official/starter_guide.md`](./logseq-official/starter_guide.md) (plugin bootstrap) and [`logseq-official/AGENTS.md`](./logseq-official/AGENTS.md) (SDK repo structure). This file adds production-tested file organization patterns (index/events/logic/settings split) derived from logseq-checklist v1.0.0.
 
 Best practices for organizing production-quality Logseq plugins based on real-world implementations.
 
