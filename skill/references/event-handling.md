@@ -1,5 +1,7 @@
 # Event-Driven Updates with DB.onChanged
 
+> **See also**: no directly corresponding file in [`logseq-official/`](./logseq-official/) — this is supplementary content documenting production patterns for `DB.onChanged`, datom filtering, and debouncing. Layer 1's [`AGENTS.md`](./logseq-official/AGENTS.md) touches on the SDK but does not cover event-driven patterns in depth.
+
 ## Overview
 
 The `DB.onChanged` hook enables plugins to respond to database changes in real-time. This is essential for plugins that need to maintain derived state (like progress indicators, aggregations, or computed properties) based on user edits.

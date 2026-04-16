@@ -1,5 +1,7 @@
 # Query & Database Operations
 
+> **See also** (authoritative upstream): [`logseq-official/db_query_guide.md`](./logseq-official/db_query_guide.md) for the canonical Datascript query guide covering `logseq.DB.q`, `datascriptQuery`, and parameterized Datalog. This file adds production patterns (tag inheritance with `or-join`, caching strategies) not covered in Layer 1.
+
 ## datascriptQuery - Querying DB Graphs
 
 Use Datalog queries to find nodes by tags, properties, or content.

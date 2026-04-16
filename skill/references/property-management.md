@@ -1,5 +1,7 @@
 # Property Value Iteration Patterns
 
+> **See also** (authoritative upstream): [`logseq-official/db_properties_guide.md`](./logseq-official/db_properties_guide.md) for the canonical explanation of file graph vs DB graph property storage, and [`logseq-official/db_properties_skill.md`](./logseq-official/db_properties_skill.md) for the properties SDK reference. This file documents the production-discovered unreliability of `block.properties[name]` and shows iteration patterns over `:user.property/*` namespaced keys — a gotcha not covered by Layer 1.
+
 ## Critical Understanding
 
 In Logseq DB graphs, properties are stored directly on block objects as **namespaced keys**, NOT in `block.properties` object.

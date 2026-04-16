@@ -1,5 +1,37 @@
 # Changelog
 
+## [2.2.0] - 2026-04-16
+
+### Added
+
+- **Layer 1: Authoritative upstream docs** — seven files mirrored verbatim from [logseq/logseq `libs/development-notes/`](https://github.com/logseq/logseq/tree/master/libs/development-notes) into `skill/references/logseq-official/`:
+  - `AGENTS.md` — AI-agent development guide (SDK repo structure, conventions)
+  - `starter_guide.md` — plugin bootstrap (Node, TypeScript, hello world)
+  - `db_properties_skill.md` — DB properties SDK reference
+  - `db_properties_guide.md` — File graph vs DB graph property storage
+  - `db_query_guide.md` — Datascript query reference (`logseq.DB.q`, `datascriptQuery`, parameterized Datalog)
+  - `db_tag_property_idents_notes.md` — Ident system and namespace conventions
+  - `experiments_api_guide.md` — `logseq.Experiments` API (React integration, custom renderers)
+- **`scripts/sync-logseq-docs.sh`** — refreshes mirrored docs from upstream via shallow+sparse `git clone`. Idempotent (SHA-based), atomic writes, fails loudly on upstream path renames.
+- **`upstream/logseq-repo/`** — gitignored local mirror, populated by the sync script.
+- **SKILL.md layered structure** with explicit precedence note: Layer 1 (upstream ground truth) → Layer 2 (production patterns) → Layer 3 (related skills). Layer 1 wins on API facts; Layer 2 wins on real-world pitfalls.
+- **Layer 3 cross-references** to RCmerci's skills (`logseq-schema` for Datascript schema, `logseq-electron-debug` for Chrome DevTools against Logseq), plus existing `logseq-db-knowledge` and `logseq-cli-skill`.
+- **Cross-links** added to the five supplementary reference files (`core-apis.md`, `queries-and-database.md`, `event-handling.md`, `property-management.md`, `plugin-architecture.md`) pointing at their corresponding Layer 1 file (or noting "supplementary — no Layer 1 equivalent").
+
+### Changed
+
+- **CLAUDE.md** (repo root) — File Structure diagram now includes `scripts/` and gitignored `upstream/`; Important Rule #1 refined from "only edit files in skill/" to "skill content lives in `skill/` only; repo-maintenance files may be added or modified at repo root" (reflects pre-existing practice with README/CHANGELOG/LICENSE/.gitignore).
+- **README.md** — new "Mirrored upstream docs" section and explicit license boundary between MIT (skill content) and AGPL-3.0 (mirrored subfolder).
+
+### Preserved
+
+- **`references/tag-detection.md`** and **`references/pitfalls-and-solutions.md`** — unchanged; unique production-tested contributions not covered in Layer 1.
+
+### License
+
+- Repo root remains **MIT**.
+- `skill/references/logseq-official/` is **AGPL-3.0** (full license text in that subfolder's `LICENSE`, attribution in its `README.md`). Redistribution of modifications to mirrored content must comply with AGPL-3.0.
+
 ## [2.1.0] - 2025-12-18
 
 ### Added

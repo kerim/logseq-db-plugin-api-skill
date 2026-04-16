@@ -1,15 +1,60 @@
 # Logseq DB Plugin API Skill
 
-**Version**: 2.1.0
-**Updated**: 2025-12-18
+**Version**: 2.2.0
+**Updated**: 2026-04-16
 
-A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**, now with modular documentation and production-tested patterns.
+A comprehensive Claude Code skill for developing Logseq plugins specifically for **DB (database) graphs**, now with authoritative upstream docs mirrored from logseq/logseq, modular documentation, and production-tested patterns.
 
 ## Overview
 
 This skill provides essential knowledge for building Logseq plugins that work with the new DB graph architecture. It covers the complete plugin API verified against LSPlugin.ts TypeScript definitions, including tag/class management (with **CORRECTED method names**), property handling (with **complete upsertProperty signature**), icon management, tag inheritance, comprehensive type definitions, and proper Vite bundling setup.
 
 **Target Audience**: Developers building plugins for Logseq DB graphs using Claude Code.
+
+## What's New in v2.2.0
+
+### Authoritative Upstream Docs + Related Skills 📚
+
+This release layers the Logseq core team's own agent-oriented documentation on top of the existing production patterns, and points to two related skills from Logseq core dev RCmerci.
+
+**New Layer 1 (authoritative upstream)**: Seven files mirrored verbatim from [logseq/logseq `libs/development-notes/`](https://github.com/logseq/logseq/tree/master/libs/development-notes), refreshed via `scripts/sync-logseq-docs.sh`:
+
+- `AGENTS.md`, `starter_guide.md`, `db_properties_skill.md`, `db_properties_guide.md`, `db_query_guide.md`, `db_tag_property_idents_notes.md`, `experiments_api_guide.md`
+
+These live in `skill/references/logseq-official/` and are licensed **AGPL-3.0** (see License boundary below).
+
+**New Layer 3 (related skills)**: cross-references to [RCmerci's skills](https://github.com/RCmerci/skills):
+
+- `logseq-schema` — authoritative Datascript schema for Datalog queries
+- `logseq-electron-debug` — Chrome DevTools against running Logseq
+
+Install separately from RCmerci's repo; SKILL.md points at them for discoverability.
+
+**SKILL.md reorganized** into 3 layers with explicit precedence: Layer 1 wins on API facts, Layer 2 (existing production patterns) wins on real-world pitfalls.
+
+**No existing content removed.** All v2.1.0 references preserved and back-linked.
+
+## Mirrored Upstream Docs
+
+### What's mirrored
+
+Files under `skill/references/logseq-official/` are copied verbatim from [logseq/logseq](https://github.com/logseq/logseq) master branch via a shallow + sparse git clone at `upstream/logseq-repo/` (gitignored).
+
+Refresh command (from repo root):
+
+```bash
+bash scripts/sync-logseq-docs.sh
+```
+
+The script is idempotent — if upstream HEAD matches the recorded `.last-synced-sha`, it exits without rewriting. Each mirrored file carries a 3-line HTML-comment footer recording the upstream commit SHA and fetch timestamp.
+
+### License boundary
+
+- The root `LICENSE` file is **MIT** and covers the skill's own original content (SKILL.md, most of `skill/references/`, scripts, docs).
+- The subfolder `skill/references/logseq-official/` is **AGPL-3.0**. Its own `LICENSE` file (full AGPL-3.0 text) and `README.md` (attribution + source URLs) make the boundary explicit.
+- **If you redistribute modifications** to files in `skill/references/logseq-official/`, the AGPL-3.0 copyleft applies. The MIT license at repo root does **not** extend into that subfolder.
+
+See [`skill/references/logseq-official/README.md`](./skill/references/logseq-official/README.md) for full attribution and [`skill/references/logseq-official/LICENSE`](./skill/references/logseq-official/LICENSE) for the AGPL-3.0 text.
 
 ## What's New in v2.1.0
 
@@ -522,7 +567,12 @@ Contributions are welcome! If you discover new API features, better patterns, or
 
 ## License
 
-MIT License - feel free to use, modify, and distribute.
+**Mixed-license repository**:
+
+- **MIT License** covers the skill's original content (root `LICENSE`): `SKILL.md`, most of `skill/references/`, `scripts/`, root documentation.
+- **AGPL-3.0** covers mirrored upstream content under `skill/references/logseq-official/` (see `skill/references/logseq-official/LICENSE`). These files are reproduced verbatim from [logseq/logseq](https://github.com/logseq/logseq) with attribution footers.
+
+Redistributing modifications to files under `skill/references/logseq-official/` requires AGPL-3.0 compliance. All other content is MIT — feel free to use, modify, and distribute.
 
 ## Support
 

@@ -11,3 +11,6 @@
 # Temp files
 *.tmp
 *.bak
+
+# Local mirror of upstream Logseq repo (populated by scripts/sync-logseq-docs.sh)
+upstream/logseq-repo/

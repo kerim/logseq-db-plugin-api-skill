@@ -1,5 +1,7 @@
 # Core APIs Quick Reference
 
+> **See also** (authoritative upstream): [`logseq-official/db_properties_skill.md`](./logseq-official/db_properties_skill.md) for the canonical properties API reference and [`logseq-official/db_tag_property_idents_notes.md`](./logseq-official/db_tag_property_idents_notes.md) for the ident system. This file collects production-tested API usage examples; Layer 1 is authoritative on API contracts.
+
 Essential Logseq DB plugin APIs for common operations.
 
 ## Tag/Class Management
