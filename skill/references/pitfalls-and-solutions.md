@@ -216,7 +216,30 @@ If you have existing code using the wrong names, do a find-and-replace:
 - Find: `logseq.Editor.removeTag(`
 - Replace: `logseq.Editor.removeBlockTag(`
 
-## Pitfall 9: or Clause Variable Mismatch
+## Pitfall 9: createPage Does Not Apply Class Tags
+
+**Problem**: Creating a page with `tags: ["MyClass"]` in `createPage()` does not tag the page with the class. The page is only tagged with "Page".
+
+**Example**:
+```typescript
+// ❌ This does NOT tag the page with "Task"
+const page = await logseq.Editor.createPage('My Item', { tags: ['Task'] })
+// page will have tag "Page" only — not "Task"
+```
+
+**Solution**: Use `addBlockTag()` after page creation:
+
+```typescript
+// ✅ CORRECT
+const page = await logseq.Editor.createPage('My Item', {})
+await logseq.Editor.addBlockTag(page.uuid, 'Task')
+```
+
+**Confirmed** in test-load, 2026-03-07.
+
+---
+
+## Pitfall 10: or Clause Variable Mismatch
 
 **Problem**: Query fails with error: "All clauses in 'or' must use same set of free vars"
 

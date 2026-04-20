@@ -47,12 +47,34 @@ const zotItems = await logseq.Editor.getTagObjects('zot')
 
 ```typescript
 // Add property to tag schema (using parent frame API)
+// IMPORTANT: Both arguments require BlockIdentity (UUID string), NOT display names.
+// Confirmed in production: manifest-install.ts uses info.logseqUuid for the tag
+// and a DataScript-resolved UUID for the property.
 const parentLogseq = (window as any).parent?.logseq
-await parentLogseq.api.add_tag_property(tagUuid, 'propertyName')
+await parentLogseq.api.add_tag_property(tagUuid, propertyUuid)
 
 // Remove property from tag schema
-await parentLogseq.api.remove_tag_property(tagUuid, 'propertyName')
+await parentLogseq.api.remove_tag_property(tagUuid, propertyUuid)
 ```
+
+**Resolving the property entity UUID** — `upsertProperty` does not return a UUID.
+Query DataScript after the upsert to resolve the property entity's UUID:
+
+```typescript
+const results = await logseq.DB.datascriptQuery(`
+  [:find ?uuid
+   :where
+   [?e :block/title "propertyName"]
+   [?e :block/tags ?t]
+   [?t :db/ident :logseq.class/Property]
+   [?e :block/uuid ?uuid]]
+`) as [string][] | null
+const propertyUuid = results?.[0]?.[0]
+```
+
+**Resolving the tag entity UUID** — use the UUID returned by `createTag` or the `uuid` field
+from `getTag`. Do not pass a display name string. Confirmed: `info.logseqUuid` (from `createTag`
+return value or `existing.uuid` from `getTag`) is the correct form.
 
 ## Page & Block Creation
 
@@ -174,6 +196,20 @@ await logseq.Editor.addTagExtends(childTagId, parentTagId)
 await logseq.Editor.removeTagExtends(childTagId, parentTagId)
 ```
 
+**Multiple inheritance is supported.** `:logseq.property.class/extends` is a cardinality-many attribute — calling `addTagExtends` multiple times with different parents stores all parents as separate datoms. Confirmed 2026-03-07.
+
+```typescript
+// Single parent
+await logseq.Editor.addTagExtends(gammaTag.uuid, alphaTag.uuid)
+
+// Add a second parent — both are stored, neither overwrites
+await logseq.Editor.addTagExtends(gammaTag.uuid, betaTag.uuid)
+
+// Datalog query now returns TWO rows for Test Gamma:
+// [?e :logseq.property.class/extends 226]  ← Alpha
+// [?e :logseq.property.class/extends 227]  ← Beta
+```
+
 **Example - Creating tag hierarchy**:
 
 ```typescript
@@ -191,6 +227,8 @@ await logseq.Editor.addTagExtends(feedbackTag.id, taskTag.id)
 // Now items tagged with #shopping or #feedback are also considered tasks
 // See queries-and-database.md for how to query tag hierarchies
 ```
+
+**`getTagObjects` is hierarchy-aware** — it traverses `extends` and returns instances of subclasses. Calling `getTagObjects('Task')` returns items directly tagged `Task` AND items tagged with any class that extends `Task`. The standard `or-join` Datalog pattern handles multi-parent classes without modification (each parent chain resolves independently).
 
 **Querying Tag Hierarchies**:
 
